@@ -1,0 +1,10 @@
+{
+  "_id": {
+    "$oid": "675b1fa1d64af05ea59ee7d3"
+  },
+  "descricao": "Chamado de Teste",
+  "status": "Aberto",
+  "Tipo": "Manutenção",
+  "tecnico": "João",
+  "usuario": "Alberto"
+}

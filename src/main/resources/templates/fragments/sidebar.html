@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <div th:fragment="sidebar">
+            <div id="sidebar">
+                <h4 class="text-center py-3">Thindesk Menu</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}" aria-current="page">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/chamados}">
+                            <i class="bi bi-headset"></i> <span class="d-none d-md-inline">Chamados</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/clientes}">
+                            <i class="bi bi-person"></i> <span class="d-none d-md-inline">Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            Configurações
+                            <span class="float-end">&#9662;</span> <!-- Setinha -->
+                        </a>
+                        <ul class="nav flex-column submenu">
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/tecnicos}">
+                                    <i class="bi bi-person"></i> <span class="d-none d-md-inline">Técnicos</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/tipo-chamado}">
+                                    <i class="bi bi-megaphone"></i> <span class="d-none d-md-inline">Tipo de Chamado</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/ajustes-horarios}">
+                                    <i class="bi bi-alarm"></i> <span class="d-none d-md-inline">Horário de Atendimento</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/recursos}">
+                                    <i class="bi bi-screwdriver"></i> <span class="d-none d-md-inline">Recursos</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </body>
+</html>

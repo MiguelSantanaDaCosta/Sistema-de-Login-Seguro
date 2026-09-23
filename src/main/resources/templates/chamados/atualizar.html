@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Editar Chamado</title>
+</head>
+<body>
+    <h1>Editar Chamado</h1>
+    <form th:action="@{/chamados/atualizar/{id}(id=${chamado.id})}" th:object="${chamado}" method="post">
+        <label for="descricao">Descrição:</label>
+        <input type="text" id="descricao" name="descricao" th:value="*{descricao}" />
+
+        <label for="status">Status:</label>
+        <select id="status" name="status" th:value="*{status}">
+            <option value="ABERTO">Aberto</option>
+            <option value="EM_ANDAMENTO">Em Andamento</option>
+            <option value="CONCLUIDO">Concluído</option>
+        </select>
+
+        <label for="tipo">Tipo:</label>
+        <input type="text" id="tipo" name="tipo" th:value="*{tipo}" />
+
+        <label for="responsavel">Técnico:</label>
+        <input type="text" id="tecnico" name="tecnico" th:value="*{tecnico}" />
+        
+        <label for="responsavel">Usuário</label>
+        <input type="text" id="usuario" name="usuario" th:value="*{usuario}" />
+
+        <button type="submit">Salvar</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Ajustes de Horários</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Ajustes de Horários por Setor</h1>
+        <form th:action="@{/ajustes-horarios/salvar}" th:object="${novoHorario}" method="post" class="mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="setor">Setor</label>
+                    <input type="text" id="setor" name="setor" th:value="*{setor}" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="diaSemana">Dia</label>
+                    <input type="text" id="diaSemana" name="diaSemana" th:value="*{diaSemana}" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="horarioInicio">Início</label>
+                    <input type="time" id="horarioInicio" name="horarioInicio" th:value="*{horarioInicio}" class="form-control" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="horarioFim">Fim</label>
+                    <input type="time" id="horarioFim" name="horarioFim" th:value="*{horarioFim}" class="form-control" required>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+        </form>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Setor</th>
+                    <th>Dia</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="horario : ${horarios}">
+                    <td th:text="${horario?.setor}"></td>
+                    <td th:text="${horario?.diaSemana}"></td>
+                    <td th:text="${horario?.horarioInicio}"></td>
+                    <td th:text="${horario?.horarioFim}"></td>
+                    <td>
+                        <a th:href="@{/ajustes-horarios/deletar/{id}(id=${horario.id})}" class="btn btn-danger btn-sm">Deletar</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

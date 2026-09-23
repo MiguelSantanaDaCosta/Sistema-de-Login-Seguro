@@ -1,0 +1,16 @@
+com\pfc\thindesk\controller\HomeController.class
+com\pfc\thindesk\entity\HorarioAtendimento.class
+com\pfc\thindesk\repository\HorarioAtendimentoRepository.class
+com\pfc\thindesk\entity\Cliente.class
+com\pfc\MongoInitConfig.class
+com\pfc\ThindeskApplication.class
+com\pfc\thindesk\service\ClienteService.class
+com\pfc\thindesk\entity\Chamado.class
+com\pfc\SecurityConfig.class
+com\pfc\thindesk\controller\ClienteController.class
+com\pfc\thindesk\repository\ChamadoRepository.class
+com\pfc\thindesk\controller\HorarioAtendimentoController.class
+com\pfc\thindesk\controller\ChamadoController.class
+com\pfc\thindesk\service\ChamadoService.class
+com\pfc\thindesk\service\HorarioAtendimentoService.class
+com\pfc\thindesk\repository\ClienteRepository.class
