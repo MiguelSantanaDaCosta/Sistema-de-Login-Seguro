@@ -1,0 +1,102 @@
+# ============================================================
+# .gitignore — Thindesk (Spring Boot + Maven + MongoDB Atlas)
+# ============================================================
+
+# ---------- Arquivos do sistema operacional ----------
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# ---------- IDE / Editor ----------
+# IntelliJ IDEA / Rider
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+
+# NetBeans (o projeto foi criado nele)
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+!.vscode/launch.json.example
+
+# ---------- Maven / Build ----------
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Logs de build
+*.log
+build.log
+mvnw.log
+
+# ---------- Java ----------
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ---------- Segredos e configurações locais ----------
+# Nunca comitar credenciais!
+.env
+.env.*
+!.env.example
+
+# Sobrescritas locais do application.properties
+application-local.properties
+application-local.yml
+application-local.yaml
+application-secret.properties
+
+# Chaves e certificados
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# ---------- MongoDB local ----------
+data/db/
+mongodb-data/
+*.bson
+
+# ---------- Logs da aplicação ----------
+logs/
+*.log.gz
+
+# ---------- Testes e cobertura ----------
+*.exec
+coverage/
+.nyc_output/
+
+# ---------- Arquivos temporários ----------
+*.tmp
+*.bak
+*.orig
+*.rej
+
+#---------Arquivos pessoais de suporte
+combinado.txt
+combinado1.txt
+
