@@ -1,15 +1,12 @@
 package com.pfc.thindesk.entity;
 
-import javax.persistence.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
 @Document(collection = "clientes")
 public class Cliente {
-    
+
     @Id
-    @javax.persistence.Id
     private String id;
     private String nome;
     private String telefone;
@@ -46,7 +43,5 @@ public class Cliente {
     public void setSetor(String setor) {
         this.setor = setor;
     }
-    
-    
 
 }
