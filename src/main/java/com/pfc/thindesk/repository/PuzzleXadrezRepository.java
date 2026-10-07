@@ -1,4 +1,4 @@
-package com.pfc.thindesk.repositoty;
+package com.pfc.thindesk.repository;
 
 import com.pfc.thindesk.entity.PuzzleXadrez;
 import org.springframework.data.mongodb.repository.MongoRepository;
