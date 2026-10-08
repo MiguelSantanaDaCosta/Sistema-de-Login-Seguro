@@ -6,6 +6,7 @@ import com.pfc.thindesk.util.FenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -17,16 +18,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Importa puzzles do banco público do Lichess (licença CC0) para a coleção puzzles_xadrez.
- *
- * - Lê src/main/resources/puzzles_lichess.csv (veja o README para gerar o arquivo).
- * - Idempotente: só roda se a coleção estiver VAZIA.
- * - Formato do CSV: PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags
- *
- * ATENÇÃO ao formato do Lichess: o FEN é a posição ANTES do primeiro lance (do adversário).
- * O puzzle apresentado ao usuário é a posição DEPOIS de Moves[0]; a solução começa em Moves[1].
- */
+
+  //Importa puzzles do banco público do Lichess (licença CC0) para a coleção puzzles_xadrez.
+
 @Component
 public class PuzzleImporter implements CommandLineRunner {
 
@@ -37,6 +31,9 @@ public class PuzzleImporter implements CommandLineRunner {
 
     @Autowired
     private PuzzleXadrezRepository puzzleXadrezRepository;
+
+    @Value("${app.security.puzzle.rating-max:1100}")
+    private int ratingMax;
 
     @Override
     public void run(String... args) {
@@ -86,21 +83,26 @@ public class PuzzleImporter implements CommandLineRunner {
             throw new IllegalStateException("Falha ao ler " + ARQUIVO_CSV, e);
         }
 
-        log.info("PuzzleImporter: {} puzzles importados ({} linhas lidas, {} descartadas).",
-                importados, lidas, lidas - importados);
+        log.info("PuzzleImporter: {} puzzles importados com rating <= {} ({} linhas lidas, {} descartadas).",
+                importados, ratingMax, lidas, lidas - importados);
     }
 
-    /**
-     * Converte uma linha do CSV em PuzzleXadrez, ou devolve null se o puzzle não servir
-     * para o 2FA. Regras de descarte:
-     *  - menos de 4 lances: puzzles de 1 lance aceitam qualquer mate no Lichess, mas aqui
-     *    comparamos string, então um mate alternativo válido seria recusado;
-     *  - solução com promoção (5 caracteres): o drag & drop envia só origem+destino;
-     *  - FEN/lance malformado.
-     */
+    
+     //Converte uma linha do CSV em PuzzleXadrez, ou devolve null se o puzzle não servir
+     
     private PuzzleXadrez converter(String linha) {
         String[] c = linha.split(",", -1);
         if (c.length < 8) {
+            return null;
+        }
+
+        int rating;
+        try {
+            rating = Integer.parseInt(c[3].trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (rating > ratingMax) {
             return null;
         }
 
@@ -110,13 +112,6 @@ public class PuzzleImporter implements CommandLineRunner {
         }
         String lanceCorreto = lances[1];
         if (lanceCorreto.length() != 4) {
-            return null;
-        }
-
-        int rating;
-        try {
-            rating = Integer.parseInt(c[3].trim());
-        } catch (NumberFormatException e) {
             return null;
         }
 
@@ -135,6 +130,7 @@ public class PuzzleImporter implements CommandLineRunner {
         puzzle.setId(c[0].trim()); // PuzzleId do Lichess como _id => sem duplicatas
         puzzle.setFen(fenDoPuzzle);
         puzzle.setLanceCorreto(lanceCorreto);
+        puzzle.setRating(rating);
         puzzle.setDificuldade(dificuldadePorRating(rating));
         puzzle.setDescricao(vez + " jogam · rating " + rating + (temas.isEmpty() ? "" : " · " + temas));
         return puzzle;

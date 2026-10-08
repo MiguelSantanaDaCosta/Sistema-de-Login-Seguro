@@ -19,4 +19,8 @@ public class PuzzleXadrez {
     private String dificuldade;
     private String descricao;
 
+    /**
+     * Rating do Lichess; usado para limitar a dificuldade dos puzzles sorteados.
+     */
+    private Integer rating;
 }

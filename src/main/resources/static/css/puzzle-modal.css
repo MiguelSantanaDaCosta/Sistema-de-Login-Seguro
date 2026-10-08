@@ -1,0 +1,108 @@
+/* ===== Pop-up do puzzle (2FA) — tabuleiro verde estilo chess.com ===== */
+
+#puzzleModal .modal-content {
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#puzzleModal .modal-header {
+  background: #312e2b;
+  color: #fff;
+  border: 0;
+}
+
+.pz-tempo {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: #262421;
+  padding: 0.2rem 0.7rem;
+  border-radius: 6px;
+}
+.pz-tempo.urgente {
+  color: #ff8a80;
+}
+
+.pz-progress {
+  height: 6px;
+  border-radius: 3px;
+}
+.pz-progress .progress-bar {
+  background: #769656;
+  transition: none;
+}
+
+/* Tabuleiro */
+#puzzle-board {
+  width: 100%;
+  max-width: 400px;
+  margin: 0.75rem auto;
+  touch-action: none; /* evita rolar a página ao arrastar no celular */
+}
+#puzzle-board .white-1e1d7 {
+  background-color: #eeeed2;
+  color: #769656;
+}
+#puzzle-board .black-3c85d {
+  background-color: #769656;
+  color: #eeeed2;
+}
+
+/* Casa de origem / lance feito (amarelo) */
+#puzzle-board .square-55d63.sq-origem {
+  background-color: #f6f669 !important;
+}
+/* Resultado do lance */
+#puzzle-board .square-55d63.sq-certo {
+  background-color: #81c784 !important;
+}
+#puzzle-board .square-55d63.sq-errado {
+  background-color: #ef5350 !important;
+}
+
+/* Casas legais ao arrastar: bolinha; captura: anel */
+#puzzle-board .square-55d63.dica {
+  background-image: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.2) 22%,
+    transparent 24%
+  );
+}
+#puzzle-board .square-55d63.dica-captura {
+  background-image: radial-gradient(
+    circle,
+    transparent 62%,
+    rgba(0, 0, 0, 0.2) 64%
+  );
+}
+
+/* Tentativas restantes */
+.pz-dots span {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: #d0d0d0;
+}
+.pz-dots span.usada {
+  background: #ef5350;
+}
+
+/* Mensagens */
+#pz-msg {
+  font-weight: 600;
+}
+#pz-msg.ok {
+  color: #2e7d32;
+}
+#pz-msg.erro {
+  color: #c62828;
+}
+#pz-msg.aviso {
+  color: #ef6c00;
+}
+#pz-msg.info {
+  color: #6c757d;
+}
