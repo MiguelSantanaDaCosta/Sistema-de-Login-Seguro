@@ -40,17 +40,17 @@ Sistema de **autenticação e autorização** construído em Java Spring Boot + 
 
 ## 🧱 Stack
 
-| Camada        | Tecnologia                                    |
-|---------------|-----------------------------------------------|
-| Linguagem     | Java 21                                       |
-| Framework     | Spring Boot 3.4                               |
-| Segurança     | Spring Security 6 + JWT (jjwt 0.12)           |
-| Persistência  | Spring Data MongoDB 4.4 (Atlas ou local)      |
-| View          | Thymeleaf 3 + thymeleaf-layout-dialect        |
-| Frontend      | Bootstrap 5 + JavaScript (fetch API)          |
-| Hash          | BCrypt (via Spring Security)                  |
-| Email         | Spring Boot Starter Mail (SMTP)               |
-| Build         | Maven (com wrapper `./mvnw`)                  |
+| Camada       | Tecnologia                               |
+| ------------ | ---------------------------------------- |
+| Linguagem    | Java 21                                  |
+| Framework    | Spring Boot 3.4                          |
+| Segurança    | Spring Security 6 + JWT (jjwt 0.12)      |
+| Persistência | Spring Data MongoDB 4.4 (Atlas ou local) |
+| View         | Thymeleaf 3 + thymeleaf-layout-dialect   |
+| Frontend     | Bootstrap 5 + JavaScript (fetch API)     |
+| Hash         | BCrypt (via Spring Security)             |
+| Email        | Spring Boot Starter Mail (SMTP)          |
+| Build        | Maven (com wrapper `./mvnw`)             |
 
 ---
 
@@ -137,7 +137,20 @@ MAIL_PASSWORD=
 DEV_EXPOR_LINK=false   # true SOMENTE em testes automatizados
 ```
 
-**Nunca** comite o `.env` real — ele já está no `.gitignore`.
+### 📧 Enviando emails com Gmail (alternativa ao Mailtrap)
+
+Para usar o Gmail em vez do Mailtrap:
+
+1. Ative a verificação em 2 etapas na conta Google
+2. Gere uma **Senha de app** em https://myaccount.google.com/apppasswords
+3. No `.env`:
+   ```dotenv
+   MAIL_ENABLED=true
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=seu.email@gmail.com
+   MAIL_PASSWORD=<16 caracteres da App Password, sem espaços>
+   ```
 
 ---
 
@@ -339,13 +352,13 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
 
 #### 1.9. Testar os casos de erro
 
-| Cenário | Comando | Esperado |
-|---------|---------|----------|
-| Login com senha errada | `curl -i -X POST http://localhost:8000/api/auth/login -d "username=maria&password=errada"` | `401` |
-| Registro duplicado | repetir o `POST /api/auth/registrar` de `1.2` | `409` |
-| Registro com email inválido | `POST /registrar` com `"email":"a@b"` | `400` com `campos.email` |
-| Link de email reaproveitado | chamar `GET /auth/confirmar?token=...` de novo | `302` → `/login?erro=link-invalido` |
-| Sem cookie em rota autenticada | `curl -i http://localhost:8000/admin/usuarios` | `302` → `/login` |
+| Cenário                        | Comando                                                                                    | Esperado                            |
+| ------------------------------ | ------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Login com senha errada         | `curl -i -X POST http://localhost:8000/api/auth/login -d "username=maria&password=errada"` | `401`                               |
+| Registro duplicado             | repetir o `POST /api/auth/registrar` de `1.2`                                              | `409`                               |
+| Registro com email inválido    | `POST /registrar` com `"email":"a@b"`                                                      | `400` com `campos.email`            |
+| Link de email reaproveitado    | chamar `GET /auth/confirmar?token=...` de novo                                             | `302` → `/login?erro=link-invalido` |
+| Sem cookie em rota autenticada | `curl -i http://localhost:8000/admin/usuarios`                                             | `302` → `/login`                    |
 
 ---
 
@@ -355,9 +368,9 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
 
 1. Abra **http://localhost:8000/registrar**.
 2. Preencha os campos e clique em **Cadastrar**.
-3. A página mostra a mensagem verde *"Cadastro recebido! Enviamos um link de confirmação..."*
+3. A página mostra a mensagem verde _"Cadastro recebido! Enviamos um link de confirmação..."_
 4. Vá ao terminal onde o servidor está rodando e **copie o link** impresso no log.
-5. Cole o link no navegador → você cai em `/login?confirmado=1` com a mensagem *"Email confirmado! Agora você já pode entrar."*
+5. Cole o link no navegador → você cai em `/login?confirmado=1` com a mensagem _"Email confirmado! Agora você já pode entrar."_
 
 #### 2.2. Login + puzzle
 
@@ -365,7 +378,7 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
 2. O pop-up **"Verificação de segurança"** abre automaticamente com o tabuleiro.
 3. No cabeçalho você vê: cronômetro (`05:00`), barra de progresso, vez de quem joga, número do puzzle (`Puzzle 1/3`) e bolinhas de tentativas.
 4. **Arraste a peça** para o lance que você acha correto.
-   - **Acertou:** o pop-up muda para *"Puzzle resolvido! Enviamos um link de confirmação para m***@exemplo.com."*
+   - **Acertou:** o pop-up muda para \*"Puzzle resolvido! Enviamos um link de confirmação para m*\*\*@exemplo.com."*
    - **Errou:** a casa fica vermelha, a peça volta, e o contador de bolinhas avança.
    - **Tempo esgotou:** o JS chama `/api/auth/novo-puzzle` sozinho e carrega outro puzzle (contando no `Puzzle N/3`).
 
@@ -381,13 +394,13 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
 
 #### 2.4. Navegar por áreas restritas
 
-| Logado como | Página | Resultado |
-|-------------|--------|-----------|
-| `maria` (ROLE_USUARIO) | `/admin/usuarios` | 403 → página de erro |
-| `maria` | `/tecnico/chamados` | 403 → página de erro |
-| `admin` | `/admin/usuarios` | lista de usuários |
-| `admin` | `/tecnico/chamados` | fila técnica |
-| Qualquer autenticado | `/`, `/chamados`, `/clientes` | OK |
+| Logado como            | Página                        | Resultado            |
+| ---------------------- | ----------------------------- | -------------------- |
+| `maria` (ROLE_USUARIO) | `/admin/usuarios`             | 403 → página de erro |
+| `maria`                | `/tecnico/chamados`           | 403 → página de erro |
+| `admin`                | `/admin/usuarios`             | lista de usuários    |
+| `admin`                | `/tecnico/chamados`           | fila técnica         |
+| Qualquer autenticado   | `/`, `/chamados`, `/clientes` | OK                   |
 
 #### 2.5. Trocar o tema
 
@@ -396,7 +409,7 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
    ```javascript
    fetch("/tema", {
      method: "POST",
-     body: new URLSearchParams({ tema: "gruvbox-dark", redirect: "/" })
+     body: new URLSearchParams({ tema: "gruvbox-dark", redirect: "/" }),
    }).then(() => location.reload());
    ```
 
@@ -503,20 +516,20 @@ src/main/resources/
 
 ## 🧭 Decisões de Design
 
-| # | Decisão | Por quê |
-|---|---------|---------|
-| 1 | JWT em **cookie HttpOnly + SameSite=Lax** | XSS não lê; CSRF mitigado pelo SameSite. |
-| 2 | **BCrypt** para senha | Recomendação OWASP; custo adaptativo. |
-| 3 | Dois JWTs (`preAuth` / `final`) | Permite múltiplos fatores sem reautenticar senha a cada etapa. |
-| 4 | Tokens de email **opacos** + hash SHA-256 no Mongo | Se o banco vazar, os hashes não são utilizáveis. |
-| 5 | **TTL no Mongo** (`@Indexed(expireAfterSeconds=0)`) | Faxina automática; código também valida `expiraEm` (defesa dupla). |
-| 6 | `@PreAuthorize` **e** URL matchers | Defesa em profundidade. |
-| 7 | `Role` como `enum` | Type-safe, sem strings mágicas. |
-| 8 | **Temas via CSS + `ThemeConfig`** | Novo tema = 1 arquivo CSS em `/css/themes/`; zero código Java. |
-| 9 | `GlobalModelAdvice` injetando tema/usuário | Toda view recebe `temaAtivo` e `username` sem repetição. |
-| 10 | `.env` + `application.properties` parametrizado | Nenhum secret hardcoded; trocar de ambiente não muda o código. |
-| 11 | Pacote `security/` isolado | Trocar JWT por session-based = mudar 2 arquivos. |
-| 12 | Thymeleaf com `th:replace` de fragments | Layout reutilizável, tema desacoplado. |
+| #   | Decisão                                             | Por quê                                                            |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | JWT em **cookie HttpOnly + SameSite=Lax**           | XSS não lê; CSRF mitigado pelo SameSite.                           |
+| 2   | **BCrypt** para senha                               | Recomendação OWASP; custo adaptativo.                              |
+| 3   | Dois JWTs (`preAuth` / `final`)                     | Permite múltiplos fatores sem reautenticar senha a cada etapa.     |
+| 4   | Tokens de email **opacos** + hash SHA-256 no Mongo  | Se o banco vazar, os hashes não são utilizáveis.                   |
+| 5   | **TTL no Mongo** (`@Indexed(expireAfterSeconds=0)`) | Faxina automática; código também valida `expiraEm` (defesa dupla). |
+| 6   | `@PreAuthorize` **e** URL matchers                  | Defesa em profundidade.                                            |
+| 7   | `Role` como `enum`                                  | Type-safe, sem strings mágicas.                                    |
+| 8   | **Temas via CSS + `ThemeConfig`**                   | Novo tema = 1 arquivo CSS em `/css/themes/`; zero código Java.     |
+| 9   | `GlobalModelAdvice` injetando tema/usuário          | Toda view recebe `temaAtivo` e `username` sem repetição.           |
+| 10  | `.env` + `application.properties` parametrizado     | Nenhum secret hardcoded; trocar de ambiente não muda o código.     |
+| 11  | Pacote `security/` isolado                          | Trocar JWT por session-based = mudar 2 arquivos.                   |
+| 12  | Thymeleaf com `th:replace` de fragments             | Layout reutilizável, tema desacoplado.                             |
 
 ---
 
@@ -596,7 +609,7 @@ Qualquer coisa que caiba nesse contrato pluga na base sem tocar em `SecurityConf
 
 O xadrez aqui **não é decoração**: ele é o **segundo fator de autenticação**. A ideia é:
 
-> *Se um atacante roubar a senha, ele ainda precisa resolver uma posição de xadrez — tarefa não-trivial para bots simples, e com prazo curto.*
+> _Se um atacante roubar a senha, ele ainda precisa resolver uma posição de xadrez — tarefa não-trivial para bots simples, e com prazo curto._
 
 #### Fluxo completo, passo a passo
 
@@ -641,24 +654,24 @@ O xadrez aqui **não é decoração**: ele é o **segundo fator de autenticaçã
 
 #### Garantias do lado do servidor
 
-| Ameaça                                 | Como o servidor bloqueia |
-|----------------------------------------|--------------------------|
-| Atacante escolhe um puzzle fácil       | Servidor **sorteia**; `puzzleId` do cliente é ignorado (só serve para checar frescor). |
-| Bots testando lances em força bruta    | Máx. **5 tentativas** por puzzle, **3 puzzles por sessão** (`PUZZLE_MAX_POR_SESSAO`). |
-| Congelar o tempo / adiantar o relógio  | Prazo é do **servidor** (`puzzleExpiraEm`). `expirou()` é checado em cada request. |
-| Reaproveitar o cookie preAuth por 1h   | Ao acertar, o preAuth é limpo (`Set-Cookie: thindesk_pre=; Max-Age=0`). |
-| Reusar o mesmo puzzle em outro login   | `puzzlesNaSessao` é zerado em `iniciarSessao`. |
-| Ler o cookie via XSS                   | Ambos os cookies são `HttpOnly`. |
-| Enumerar usuários                      | Sempre 401 "Credenciais inválidas", independente de existir. |
+| Ameaça                                | Como o servidor bloqueia                                                               |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| Atacante escolhe um puzzle fácil      | Servidor **sorteia**; `puzzleId` do cliente é ignorado (só serve para checar frescor). |
+| Bots testando lances em força bruta   | Máx. **5 tentativas** por puzzle, **3 puzzles por sessão** (`PUZZLE_MAX_POR_SESSAO`).  |
+| Congelar o tempo / adiantar o relógio | Prazo é do **servidor** (`puzzleExpiraEm`). `expirou()` é checado em cada request.     |
+| Reaproveitar o cookie preAuth por 1h  | Ao acertar, o preAuth é limpo (`Set-Cookie: thindesk_pre=; Max-Age=0`).                |
+| Reusar o mesmo puzzle em outro login  | `puzzlesNaSessao` é zerado em `iniciarSessao`.                                         |
+| Ler o cookie via XSS                  | Ambos os cookies são `HttpOnly`.                                                       |
+| Enumerar usuários                     | Sempre 401 "Credenciais inválidas", independente de existir.                           |
 
 #### Tuning por variável de ambiente
 
-| Variável                | Default | Efeito |
-|-------------------------|:-------:|--------|
-| `PUZZLE_RATING_MAX`     | 1100    | Dificuldade máxima (também filtro do import). |
-| `PUZZLE_TEMPO_LIMITE`   | 300     | Segundos por puzzle. |
-| `PUZZLE_MAX_POR_SESSAO` | 3       | Trocas permitidas antes de exigir nova senha. |
-| `app.security.puzzle.max-tentativas` | 5 | Erros por puzzle antes de rotacionar. |
+| Variável                             | Default | Efeito                                        |
+| ------------------------------------ | :-----: | --------------------------------------------- |
+| `PUZZLE_RATING_MAX`                  |  1100   | Dificuldade máxima (também filtro do import). |
+| `PUZZLE_TEMPO_LIMITE`                |   300   | Segundos por puzzle.                          |
+| `PUZZLE_MAX_POR_SESSAO`              |    3    | Trocas permitidas antes de exigir nova senha. |
+| `app.security.puzzle.max-tentativas` |    5    | Erros por puzzle antes de rotacionar.         |
 
 > **Dica para demo:** baixe `PUZZLE_RATING_MAX` para 800 se quiser puzzles bem fáceis na apresentação.
 
@@ -676,14 +689,14 @@ Os puzzles vêm do **banco público de puzzles do Lichess**:
 
 #### Colunas do CSV original
 
-| Coluna            | Uso no Thindesk |
-|-------------------|-----------------|
-| `PuzzleId`        | vira `_id` no Mongo (evita duplicatas em reimportações) |
-| `FEN`             | posição **antes** do lance do adversário |
-| `Moves`           | lista UCI; `Moves[0]` = lance do adversário, `Moves[1]` = **solução** |
-| `Rating`          | dificuldade (filtrada por `PUZZLE_RATING_MAX`) |
-| `Themes`          | tags (`mateIn2`, `fork`, `endgame`…) → vão para `descricao` |
-| *(demais)*        | ignoradas |
+| Coluna     | Uso no Thindesk                                                       |
+| ---------- | --------------------------------------------------------------------- |
+| `PuzzleId` | vira `_id` no Mongo (evita duplicatas em reimportações)               |
+| `FEN`      | posição **antes** do lance do adversário                              |
+| `Moves`    | lista UCI; `Moves[0]` = lance do adversário, `Moves[1]` = **solução** |
+| `Rating`   | dificuldade (filtrada por `PUZZLE_RATING_MAX`)                        |
+| `Themes`   | tags (`mateIn2`, `fork`, `endgame`…) → vão para `descricao`           |
+| _(demais)_ | ignoradas                                                             |
 
 #### Pipeline de importação (`PuzzleImporter`)
 
@@ -707,7 +720,7 @@ puzzleRepository.saveAll(lote)
 Coleção `puzzles_xadrez` no MongoDB Atlas
 ```
 
-**FEN do Lichess é a posição **antes** do lance do oponente. Como o projeto **não carrega engine de xadrez**, o `FenUtil` aplica esse lance "na mão" (movendo a peça, tratando en passant, roque, promoção e atualizando contadores) para chegar à posição que o usuário vê. Não valida legalidade — confia no Lichess. É simples, determinístico e cabe em uma classe de ~200 linhas.
+**FEN do Lichess é a posição **antes** do lance do oponente. Como o projeto **não carrega engine de xadrez\*\*, o `FenUtil` aplica esse lance "na mão" (movendo a peça, tratando en passant, roque, promoção e atualizando contadores) para chegar à posição que o usuário vê. Não valida legalidade — confia no Lichess. É simples, determinístico e cabe em uma classe de ~200 linhas.
 
 #### Sorteio em tempo real (`PuzzleXadrezRepository`)
 
@@ -727,14 +740,14 @@ List<PuzzleXadrez> sortearAteRating(int ratingMax, String excluirId);
 
 #### Por que esse dataset é adequado
 
-| Vantagem | Detalhe |
-|----------|---------|
-| **Domínio público** | Sem restrições de licença. |
-| **Volume** | 4M+ puzzles — impossível "decorar" a resposta. |
-| **Rating calibrado** | Você controla a dificuldade pelo `PUZZLE_RATING_MAX`. |
-| **Temas** | `mateIn1`, `fork`, `pin`, `endgame`… cada puzzle já vem com metadados. |
-| **Determinismo offline** | Depois de importado, o Atlas responde sem depender do Lichess. |
-| **Fácil de explicar** | "Peguei um dataset público, filtrei por rating, apliquei o primeiro lance com FenUtil." |
+| Vantagem                 | Detalhe                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| **Domínio público**      | Sem restrições de licença.                                                              |
+| **Volume**               | 4M+ puzzles — impossível "decorar" a resposta.                                          |
+| **Rating calibrado**     | Você controla a dificuldade pelo `PUZZLE_RATING_MAX`.                                   |
+| **Temas**                | `mateIn1`, `fork`, `pin`, `endgame`… cada puzzle já vem com metadados.                  |
+| **Determinismo offline** | Depois de importado, o Atlas responde sem depender do Lichess.                          |
+| **Fácil de explicar**    | "Peguei um dataset público, filtrei por rating, apliquei o primeiro lance com FenUtil." |
 
 #### Como regenerar/atualizar o CSV
 

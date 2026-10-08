@@ -1,3 +1,9 @@
+// ============================================================
+// JwtAuthFilter.java
+// Autor: Miguel Santana
+// Descrição: Lê JWT do header/cookie e autentica a requisição.
+//            Ignora tokens preAuth (só valem para o puzzle).
+// ============================================================
 package com.pfc.thindesk.security;
 
 import java.io.IOException;
@@ -26,31 +32,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Autowired private UsuarioService usuarioService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
         String token = extrairToken(request);
 
         if (token != null && jwtUtil.isTokenValido(token)) {
             Boolean isPreAuth = jwtUtil.extrairPreAuth(token);
+
+            // preAuth não autentica: só serve para o fluxo do puzzle
             if (!Boolean.TRUE.equals(isPreAuth)) {
                 String username = jwtUtil.extrairUsername(token);
                 UserDetails userDetails = usuarioService.loadUserByUsername(username);
+
                 UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
         filterChain.doFilter(request, response);
     }
 
+    // Tenta header primeiro, depois cookie
     private String extrairToken(HttpServletRequest request) {
-        // 1) Header Authorization (API/curl/SPA)
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
-        // 2) Cookie thindesk_auth (navegador)
+
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie c : cookies) {
