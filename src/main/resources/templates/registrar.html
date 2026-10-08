@@ -62,6 +62,7 @@
             autocomplete="email"
             required
           />
+          <div class="form-text">Enviaremos um link para ativar a conta.</div>
         </div>
         <div class="mb-3">
           <label for="password" class="form-label">Senha</label>
@@ -113,8 +114,8 @@
             const dados = await resp.json().catch(() => ({}));
 
             if (resp.status === 201) {
-              mostrar(dados.mensagem + " Redirecionando...", true);
-              setTimeout(() => (window.location.href = "/login"), 1500);
+              mostrar(dados.mensagem, true);
+              document.getElementById("registroForm").reset();
               return;
             }
             mostrar(

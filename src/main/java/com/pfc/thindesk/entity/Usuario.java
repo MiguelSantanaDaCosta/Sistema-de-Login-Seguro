@@ -28,7 +28,16 @@ public class Usuario {
 
     private String password;
     private String nomeCompleto;
+
+    /** false = conta pendente de confirmação por email OU desativada pelo admin. */
     private boolean ativo = true;
+
+    /**
+     * false somente enquanto o cadastro público aguarda a confirmação do email.
+     * Contas antigas/seed (sem o campo) valem como confirmadas.
+     */
+    private boolean emailConfirmado = true;
+
     private Set<Role> roles = new HashSet<>();
 
     // --- Estado do 2FA (o servidor é a fonte da verdade; o cliente não escolhe o puzzle) ---

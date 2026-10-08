@@ -71,6 +71,11 @@
             />
           </div>
           <div
+            id="info"
+            class="text-success mb-2"
+            style="min-height: 1.2em"
+          ></div>
+          <div
             id="error"
             class="text-danger mb-2"
             style="min-height: 1.2em"
@@ -163,12 +168,30 @@
               aoEncerrar: (mensagem) => {
                 err.textContent = mensagem || "";
               },
+              aoConcluir: () => {
+                window.location.href = "/login?enviado=1";
+              },
             });
           } catch (ex) {
             err.textContent = "Erro ao contatar o servidor.";
             console.error(ex);
           }
         });
+
+      // Avisos vindos dos links de email e do fim do pop-up
+      (function () {
+        const q = new URLSearchParams(window.location.search);
+        const info = document.getElementById("info");
+        const err = document.getElementById("error");
+        if (q.get("confirmado"))
+          info.textContent = "Email confirmado! Agora você já pode entrar.";
+        if (q.get("enviado"))
+          info.textContent =
+            "Link enviado! Abra o seu email para concluir o login.";
+        if (q.get("erro") === "link-invalido")
+          err.textContent =
+            "Link inválido, vencido ou já utilizado. Faça login novamente.";
+      })();
     </script>
   </body>
 </html>

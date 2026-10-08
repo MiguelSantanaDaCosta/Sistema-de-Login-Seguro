@@ -16,6 +16,16 @@ import com.pfc.thindesk.security.JwtAuthFilter;
 
 import jakarta.servlet.DispatcherType;
 
+/**
+ * Configuração central de segurança.
+ *
+ * - Rotas públicas: login, registro, links de confirmação por email, assets
+ * - /admin/** -> ROLE_ADMIN
+ * - /tecnico/** -> ROLE_TECNICO ou ROLE_ADMIN
+ * - resto -> autenticado (qualquer role)
+ *
+ * O @EnableMethodSecurity permite @PreAuthorize nos controllers (defesa em profundidade).
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -32,30 +42,35 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+
+                        // Público (o token do link é a credencial das rotas /auth/confirmar*)
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/login",
                                 "/registrar",
                                 "/puzzle",
                                 "/auth/confirmar",
+                                "/auth/confirmar-registro",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
                                 "/error")
                         .permitAll()
 
+                        // Áreas HTML por perfil
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/tecnico/**").hasAnyRole("TECNICO", "ADMIN")
 
+                        // APIs por perfil
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/tecnico/**").hasAnyRole("TECNICO", "ADMIN")
 
+                        // Todo o resto exige autenticação
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

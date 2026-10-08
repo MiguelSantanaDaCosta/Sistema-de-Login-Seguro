@@ -1,5 +1,6 @@
 package com.pfc.thindesk.service;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.pfc.thindesk.dto.RegistroRequest;
 import com.pfc.thindesk.entity.Role;
+import com.pfc.thindesk.entity.TipoToken;
 import com.pfc.thindesk.entity.Usuario;
 import com.pfc.thindesk.exception.ConflitoCadastroException;
 import com.pfc.thindesk.repository.UsuarioRepository;
@@ -26,22 +28,30 @@ public class UsuarioService implements UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    /** Cadastro feito pelo admin (roles escolhidas por quem chama). */
+    @Autowired
+    private EmailTokenService emailTokenService;
+
+    @Autowired
+    private EmailService emailService;
+
+    /** Cadastro feito pelo admin (usuário já ativo e confirmado). */
     public Usuario cadastrar(Usuario usuario, Set<Role> roles) {
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
         usuario.setRoles(roles);
+        usuario.setAtivo(true);
+        usuario.setEmailConfirmado(true);
         return usuarioRepository.save(usuario);
     }
 
     /**
-     * Auto-cadastro público. Sempre cria com a role USUARIO (nunca aceita role
-     * vinda do cliente).
-     * Os formatos já foram validados no controller (@Valid); aqui checamos
-     * unicidade.
+     * Etapa 1 do cadastro público:
+     * - cria usuário PENDENTE (ativo=false, emailConfirmado=false)
+     * - gera token de registro (uso único, com TTL) e envia por email
+     * - devolve o token bruto (usado pelo RegistroController para o modo dev)
      */
-    public Usuario registrar(RegistroRequest req) {
+    public String registrar(RegistroRequest req) {
         String username = req.username.trim();
-        String email = req.email.trim().toLowerCase(); // email normalizado em minúsculas
+        String email = req.email.trim().toLowerCase(); // email sempre em minúsculas
 
         if (usuarioRepository.existsByUsername(username)) {
             throw new ConflitoCadastroException("Este nome de usuário já está em uso.");
@@ -56,8 +66,32 @@ public class UsuarioService implements UserDetailsService {
         usuario.setNomeCompleto(req.nomeCompleto.trim());
         usuario.setPassword(passwordEncoder.encode(req.password)); // BCrypt
         usuario.setRoles(Set.of(Role.ROLE_USUARIO));
-        usuario.setAtivo(true);
-        return usuarioRepository.save(usuario);
+        usuario.setAtivo(false); // só ativa após clicar no link
+        usuario.setEmailConfirmado(false);
+        usuarioRepository.save(usuario);
+
+        String token = emailTokenService.gerar(username, TipoToken.REGISTRO);
+        emailService.enviarTokenRegistro(email, token);
+        return token;
+    }
+
+    /**
+     * Etapa 2 do cadastro público: consome o token de REGISTRO e ativa a conta.
+     * Retorna true se o token era válido; false caso contrário.
+     */
+    public boolean confirmarRegistro(String token) {
+        Optional<String> dono = emailTokenService.consumir(token, TipoToken.REGISTRO);
+        if (dono.isEmpty()) {
+            return false;
+        }
+        return usuarioRepository.findByUsername(dono.get())
+                .map(u -> {
+                    u.setEmailConfirmado(true);
+                    u.setAtivo(true);
+                    usuarioRepository.save(u);
+                    return true;
+                })
+                .orElse(false);
     }
 
     @Override
@@ -69,7 +103,8 @@ public class UsuarioService implements UserDetailsService {
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toList());
 
-        // enabled = ativo: usuário desativado pelo admin não consegue autenticar
+        // enabled = ativo: usuário pendente (não confirmou email) ou desativado pelo
+        // admin não autentica
         return new org.springframework.security.core.userdetails.User(
                 usuario.getUsername(), usuario.getPassword(),
                 usuario.isAtivo(), true, true, true, authorities);

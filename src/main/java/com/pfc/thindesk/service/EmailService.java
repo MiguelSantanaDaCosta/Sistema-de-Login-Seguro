@@ -22,19 +22,46 @@ public class EmailService {
     @Value("${app.base-url:http://localhost:8000}")
     private String baseUrl;
 
-    public void enviarTokenConfirmacao(String destinatario, String token) {
-        String link = baseUrl + "/auth/confirmar?token=" + token;
-        String assunto = "Thindesk — Confirmação de login";
-        String corpo = "Você resolveu o puzzle!\n\n" +
-                       "Clique no link abaixo para concluir o login:\n\n" +
-                       link + "\n\n" +
-                       "Este link expira em 1 hora.";
+    @Value("${app.security.email-token.login-minutos:15}")
+    private long loginMinutos;
 
+    @Value("${app.security.email-token.registro-horas:24}")
+    private long registroHoras;
+
+    public String linkLogin(String token) {
+        return baseUrl + "/auth/confirmar?token=" + token;
+    }
+
+    public String linkRegistro(String token) {
+        return baseUrl + "/auth/confirmar-registro?token=" + token;
+    }
+
+    // Email do login: enviado depois que o usuário resolve o puzzle. 
+    public void enviarTokenConfirmacao(String destinatario, String token) {
+        String link = linkLogin(token);
+        String corpo = "Você resolveu o puzzle!\n\n"
+                + "Clique no link abaixo para concluir o login:\n\n" + link + "\n\n"
+                + "O link expira em " + loginMinutos + " minutos e só pode ser usado uma vez.\n"
+                + "Se não foi você, ignore este email e troque a sua senha.";
+        enviar(destinatario, "Thindesk — Confirmação de login", corpo, link);
+    }
+
+    //Email do cadastro: confirma que o endereço é do usuário e ativa a conta. */
+    public void enviarTokenRegistro(String destinatario, String token) {
+        String link = linkRegistro(token);
+        String corpo = "Bem-vindo ao Thindesk!\n\n"
+                + "Confirme o seu email para ativar a conta:\n\n" + link + "\n\n"
+                + "O link expira em " + registroHoras + " horas e só pode ser usado uma vez.\n"
+                + "Se você não criou esta conta, ignore este email.";
+        enviar(destinatario, "Thindesk — Confirme o seu cadastro", corpo, link);
+    }
+
+    private void enviar(String destinatario, String assunto, String corpo, String link) {
         if (!mailEnabled || mailSender == null) {
-            log.warn("=== MAIL DESABILITADO — link de confirmação ===");
+            log.warn("=== MAIL DESABILITADO — {} ===", assunto);
             log.warn("Para: {}", destinatario);
             log.warn("Link: {}", link);
-            log.warn("===============================================");
+            log.warn("================================");
             return;
         }
 
@@ -44,10 +71,10 @@ public class EmailService {
             msg.setSubject(assunto);
             msg.setText(corpo);
             mailSender.send(msg);
-            log.info("Email de confirmação enviado para {}", destinatario);
+            log.info("Email '{}' enviado para {}", assunto, destinatario);
         } catch (Exception e) {
             log.error("Falha ao enviar email para {}: {}", destinatario, e.getMessage());
-            log.warn("=== FALLBACK — link de confirmação ===");
+            log.warn("=== FALLBACK — {} ===", assunto);
             log.warn("Link: {}", link);
         }
     }

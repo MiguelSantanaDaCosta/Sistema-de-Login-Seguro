@@ -23,9 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pfc.thindesk.entity.PuzzleXadrez;
+import com.pfc.thindesk.entity.TipoToken;
 import com.pfc.thindesk.entity.Usuario;
 import com.pfc.thindesk.repository.UsuarioRepository;
 import com.pfc.thindesk.security.JwtUtil;
+import com.pfc.thindesk.service.EmailService;
+import com.pfc.thindesk.service.EmailTokenService;
 import com.pfc.thindesk.service.PuzzleService;
 
 import jakarta.servlet.http.Cookie;
@@ -33,19 +36,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Autenticação em duas etapas:
- *  1) /login            -> valida a senha, emite token preAuth e o 1º puzzle (rating <= máximo)
- *  2) /resolver-puzzle  -> valida o lance contra o puzzle GUARDADO NO SERVIDOR
- *     - acertou: emite o token final
+ * Login em três fatores:
+ *  1) /login            -> senha (BCrypt); emite token preAuth e o 1º puzzle (rating <= máximo)
+ *  2) /resolver-puzzle  -> lance contra o puzzle GUARDADO NO SERVIDOR
+ *     - acertou: gera token de uso único e ENVIA POR EMAIL (não emite o token final)
  *     - 5 erros ou tempo esgotado: gera outro puzzle (até o limite por sessão)
- *  3) /novo-puzzle      -> o navegador chama quando o cronômetro zera (o servidor confere o prazo)
+ *  3) GET /auth/confirmar?token=...  (ConfirmacaoController) -> consome o token e seta thindesk_auth
+ *  /novo-puzzle: o navegador chama quando o cronômetro zera (o servidor confere o prazo).
  */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private static final String COOKIE_PRE = "thindesk_pre";
-    private static final String COOKIE_AUTH = "thindesk_auth";
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -55,6 +58,10 @@ public class AuthController {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private PuzzleService puzzleService;
+    @Autowired
+    private EmailTokenService emailTokenService;
+    @Autowired
+    private EmailService emailService;
 
     @Value("${app.security.puzzle.max-tentativas:5}")
     private int maxTentativas;
@@ -62,8 +69,12 @@ public class AuthController {
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
 
+    /** SOMENTE desenvolvimento/testes: devolve o link do email no JSON (permite o test.sh). */
+    @Value("${app.dev.expor-link-confirmacao:false}")
+    private boolean exporLinkDev;
+
     // ---------------------------------------------------------------
-    // LOGIN — devolve preAuth em header E em cookie (HttpOnly) + 1º puzzle
+    // LOGIN — preAuth em header E cookie (HttpOnly) + 1º puzzle
     // ---------------------------------------------------------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String username,
@@ -79,7 +90,7 @@ public class AuthController {
         PuzzleXadrez puzzle = puzzleService.iniciarSessao(usuario);
 
         String preAuthToken = jwtUtil.gerarToken(username, true);
-        response.addHeader(HttpHeaders.SET_COOKIE, cookieSessao(COOKIE_PRE, preAuthToken).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookiePre(preAuthToken).toString());
 
         Map<String, Object> corpo = mapa("mensagem",
                 "Credenciais válidas. Resolva o puzzle de xadrez para continuar.");
@@ -91,9 +102,7 @@ public class AuthController {
     }
 
     // ---------------------------------------------------------------
-    // RESOLVER PUZZLE
-    // O puzzle vem do servidor (usuario.puzzleAtualId); o "puzzleId" do cliente é opcional
-    // e, se enviado, precisa bater com o puzzle ativo.
+    // RESOLVER PUZZLE — o puzzle vem do servidor; "puzzleId" do cliente é opcional
     // ---------------------------------------------------------------
     @PostMapping("/resolver-puzzle")
     public ResponseEntity<?> resolverPuzzle(
@@ -127,19 +136,29 @@ public class AuthController {
         String lance = lanceFen == null ? "" : lanceFen.trim().toLowerCase();
         String esperado = puzzle.getLanceCorreto() == null ? "" : puzzle.getLanceCorreto().trim().toLowerCase();
 
-        // --- Acertou ---
+        // --- Acertou: 3º fator, o link enviado por email ---
         if (!esperado.isEmpty() && lance.equals(esperado)) {
-            puzzleService.limpar(usuario);
+            String email = usuario.getEmail();
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(mapa(
+                        "erro", "Este usuário não tem email cadastrado. Peça ao administrador."));
+            }
 
-            String username = usuario.getUsername();
-            String finalToken = jwtUtil.gerarToken(username, false);
+            String token = emailTokenService.gerar(usuario.getUsername(), TipoToken.LOGIN); // 15 min, uso único
+            emailService.enviarTokenConfirmacao(email, token);
 
-            response.addHeader(HttpHeaders.SET_COOKIE, cookieSessao(COOKIE_AUTH, finalToken).toString());
-            response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString()); // preAuth já usado
+            puzzleService.limpar(usuario); // puzzle concluído
+            response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString()); // preAuth cumpriu seu papel
 
-            return ResponseEntity.ok()
-                    .header("Authorization", "Bearer " + finalToken)
-                    .body(mapa("mensagem", "Login concluído.", "authToken", finalToken));
+            Map<String, Object> corpo = mapa(
+                    "mensagem", "Puzzle resolvido! Enviamos um link de confirmação para o seu email.",
+                    "aguardandoConfirmacao", true,
+                    "emailMascarado", mascarar(email),
+                    "validadeMinutos", emailTokenService.validadeMinutos(TipoToken.LOGIN));
+            if (exporLinkDev) {
+                corpo.put("linkConfirmacao", emailService.linkLogin(token));
+            }
+            return ResponseEntity.ok(corpo);
         }
 
         // --- Errou ---
@@ -158,8 +177,9 @@ public class AuthController {
                 "restantes", maxTentativas - tentativas));
     }
 
-    // NOVO PUZZLE quando o cronômetro zera
-    // O servidor confere o prazo
+    // ---------------------------------------------------------------
+    // NOVO PUZZLE — chamado quando o cronômetro do navegador zera
+    // ---------------------------------------------------------------
     @PostMapping("/novo-puzzle")
     public ResponseEntity<?> novoPuzzle(
             @RequestHeader(value = "Authorization", required = false) String preAuthHeader,
@@ -191,15 +211,19 @@ public class AuthController {
         }
     }
 
+    // ---------------------------------------------------------------
     // LOGOUT — apaga os dois cookies
+    // ---------------------------------------------------------------
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_AUTH).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo("thindesk_auth").toString());
         response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString());
         return ResponseEntity.ok(mapa("mensagem", "Logout efetuado."));
     }
 
-    // Tratamento de erros
+    // ---------------------------------------------------------------
+    // Tratamento de erros deste controller (sempre JSON {"erro": "..."})
+    // ---------------------------------------------------------------
     static class PreAuthInvalidoException extends RuntimeException {
         final int status;
 
@@ -214,7 +238,7 @@ public class AuthController {
         return ResponseEntity.status(e.status).body(mapa("erro", e.getMessage()));
     }
 
-    /** Senha errada, usuário inexistente ou desativado — mesma resposta para não vazar qual foi. */
+    /** Senha errada, usuário inexistente, pendente ou desativado: mesma resposta para não vazar qual foi. */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<?> credenciaisInvalidas(AuthenticationException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapa("erro", "Credenciais inválidas."));
@@ -225,7 +249,9 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mapa("erro", e.getMessage()));
     }
 
+    // ---------------------------------------------------------------
     // Helpers
+    // ---------------------------------------------------------------
 
     /** Gera outro puzzle e responde com {erro, novoPuzzle}; ou 429 se estourou o limite da sessão. */
     private ResponseEntity<?> rotacionar(Usuario usuario, HttpStatus status, String erro,
@@ -263,8 +289,17 @@ public class AuthController {
                 .orElseThrow(() -> new PreAuthInvalidoException(401, "Usuário não encontrado."));
     }
 
-    private ResponseCookie cookieSessao(String nome, String valor) {
-        return ResponseCookie.from(nome, valor)
+    /** "maria@exemplo.com" -> "m***@exemplo.com" */
+    private String mascarar(String email) {
+        int arroba = email.indexOf('@');
+        if (arroba <= 1) {
+            return "***" + email.substring(Math.max(arroba, 0));
+        }
+        return email.charAt(0) + "***" + email.substring(arroba);
+    }
+
+    private ResponseCookie cookiePre(String valor) {
+        return ResponseCookie.from(COOKIE_PRE, valor)
                 .httpOnly(true)
                 .secure(false) // true em produção (HTTPS)
                 .path("/")

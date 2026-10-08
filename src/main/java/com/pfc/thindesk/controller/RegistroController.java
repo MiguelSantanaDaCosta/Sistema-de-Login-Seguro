@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,23 +19,25 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.pfc.thindesk.dto.RegistroRequest;
 import com.pfc.thindesk.exception.ConflitoCadastroException;
+import com.pfc.thindesk.service.EmailService;
 import com.pfc.thindesk.service.UsuarioService;
 
 import jakarta.validation.Valid;
 
-/**
- * Cadastro público de usuários.
- * - GET /registrar -> página HTML (registrar.html)
- * - POST /api/auth/registrar -> JSON; sempre responde {"erro": "..."} em caso
- * de falha
- *
- * Códigos: 201 criado | 400 dados inválidos | 409 username/email já existe.
- */
+//Cadastro público em 2 etapas.
+//  - GET  /registrar           -> página HTML
+//  - POST /api/auth/registrar  -> etapa 1: cria usuário PENDENTE e envia o email
 @Controller
 public class RegistroController {
 
     @Autowired
     private UsuarioService usuarioService;
+    @Autowired
+    private EmailService emailService;
+
+    /** SOMENTE desenvolvimento/testes: devolve o link do email no JSON. */
+    @Value("${app.dev.expor-link-confirmacao:false}")
+    private boolean exporLinkDev;
 
     @GetMapping("/registrar")
     public String pagina() {
@@ -52,8 +55,9 @@ public class RegistroController {
             return ResponseEntity.badRequest().body(Map.of("erro", primeiro, "campos", campos));
         }
 
+        String token;
         try {
-            usuarioService.registrar(req);
+            token = usuarioService.registrar(req);
         } catch (ConflitoCadastroException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("erro", e.getMessage()));
         } catch (DuplicateKeyException e) {
@@ -62,8 +66,14 @@ public class RegistroController {
                     .body(Map.of("erro", "Nome de usuário ou email já cadastrado."));
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Map.of("mensagem", "Cadastro realizado. Faça login para continuar."));
+        Map<String, Object> corpo = new LinkedHashMap<>();
+        corpo.put("mensagem", "Cadastro recebido! Enviamos um link de confirmação para o seu email. "
+                + "Clique nele para ativar a conta.");
+        corpo.put("aguardandoConfirmacao", true);
+        if (exporLinkDev) {
+            corpo.put("linkConfirmacao", emailService.linkRegistro(token));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(corpo);
     }
 
     /** JSON malformado ou corpo ausente. */

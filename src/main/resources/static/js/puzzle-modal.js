@@ -2,9 +2,13 @@
  * Pop-up do puzzle de xadrez (2FA).
  * Depende de: jQuery, chess.js 0.10.x, chessboard.js 1.0.0 e Bootstrap 5 (JS).
  *
- * Uso: PuzzleModal.abrir(dadosDoLogin, { aoEncerrar: (mensagem) => { ... } })
+ * Uso: PuzzleModal.abrir(dadosDoLogin, {
+ *        aoEncerrar: (mensagem) => { ... },   // sessão encerrada (cancelou, limite, erro)
+ *        aoConcluir: (dados) => { ... }       // puzzle resolvido e email enviado
+ *      })
  *
  * O servidor decide qual é o puzzle, o prazo e quando trocar; aqui só desenhamos.
+ * Ao resolver o puzzle, o login ainda NÃO termina: falta abrir o link enviado por email.
  */
 (function () {
   "use strict";
@@ -21,6 +25,8 @@
   let timerId = null;
   let fimMs = 0;
   let totalMs = 1;
+
+  // ---------- Ciclo de vida ----------
 
   function abrir(dados, opts) {
     opcoes = opts || {};
@@ -94,7 +100,7 @@
     );
   }
 
-  //Carregar um puzzle
+  // ---------- Carregar um puzzle (inicial ou novo) ----------
 
   function carregar(dados) {
     puzzle = dados;
@@ -222,11 +228,12 @@
       });
 
       if (resp.ok) {
+        const ok = await resp.json().catch(() => ({}));
         limparMarcas();
         marcar(destino, "sq-certo");
-        mensagem("Correto! Entrando...", "ok");
         pararTimer();
-        setTimeout(() => (window.location.href = "/"), 700);
+        travado = true;
+        mostrarEmailEnviado(ok);
         return;
       }
 
@@ -262,6 +269,42 @@
   }
 
   // ---------- Auxiliares de interface ----------
+
+  /**
+   * Puzzle resolvido: o login só termina quando o usuário abrir o link enviado por email.
+   * Ao fechar, a página recarrega para restaurar o pop-up limpo (sem refazer o DOM à mão).
+   */
+  function mostrarEmailEnviado(dados) {
+    const corpo = document.querySelector("#puzzleModal .modal-body");
+    corpo.innerHTML = "";
+
+    const titulo = document.createElement("h5");
+    titulo.className = "text-center text-success mt-2";
+    titulo.textContent = "Puzzle resolvido!";
+
+    const p1 = document.createElement("p");
+    p1.className = "text-center";
+    p1.textContent =
+      "Enviamos um link de confirmação para " +
+      (dados.emailMascarado || "o seu email") +
+      ". Clique nele para concluir o login.";
+
+    const p2 = document.createElement("p");
+    p2.className = "text-center text-muted small";
+    p2.textContent =
+      "O link vale por " +
+      (dados.validadeMinutos || 15) +
+      " minutos e só pode ser usado uma vez.";
+
+    corpo.append(titulo, p1, p2); // textContent/append: nada de HTML interpretado
+
+    const botao = $("pz-cancelar");
+    botao.textContent = "Fechar";
+    botao.onclick = () => {
+      modal.hide();
+      if (opcoes.aoConcluir) opcoes.aoConcluir(dados);
+    };
+  }
 
   function marcar(casa, classe) {
     jQuery("#puzzle-board .square-" + casa).addClass(classe);
