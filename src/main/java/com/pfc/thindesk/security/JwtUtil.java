@@ -40,6 +40,15 @@ public class JwtUtil {
             .getSubject();
     }
 
+    public Boolean extrairPreAuth(String token) {
+    return Jwts.parser()
+        .verifyWith(getSigninKey())
+        .build()
+        .parseSignedClaims(token)
+        .getPayload()
+        .get("preAuth", Boolean.class);
+}
+
     public boolean isTokenValido(String token) {
         try {
             Jwts.parser().verifyWith(getSigninKey()).build().parseSignedClaims(token);

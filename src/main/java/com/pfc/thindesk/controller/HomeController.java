@@ -32,6 +32,11 @@ public class HomeController {
         return "login";
     }
 
+    @GetMapping("/puzzle")
+    public String puzzle() {
+        return "puzzle";
+    }
+
     @GetMapping("/")
     public ModelAndView home() {
         ModelAndView modelAndView = new ModelAndView("layout");
@@ -64,7 +69,7 @@ public class HomeController {
     @GetMapping("/ajustes-horarios")
     public String horarios(Model model) {
         List<HorarioAtendimento> horarios = horarioAtendimentoService.listarTodos();
-        model.addAttribute("ajustes-horarios", horarios);
+        model.addAttribute("horarios", horarios);
         String fragment = "ajustes-horarios :: content";
         log.info("Carregando fragmento: {}", fragment); // Log para depuração
         model.addAttribute("content", fragment);
