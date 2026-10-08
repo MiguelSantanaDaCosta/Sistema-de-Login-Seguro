@@ -22,7 +22,7 @@ out/
 .settings/
 .apt_generated/
 .factorypath
-
+test.sh
 # NetBeans (o projeto foi criado nele)
 /nbproject/private/
 /nbbuild/

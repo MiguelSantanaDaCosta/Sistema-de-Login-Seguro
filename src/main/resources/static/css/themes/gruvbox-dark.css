@@ -1,0 +1,208 @@
+/* ============================================================
+   Tema Gruvbox Dark
+   Paleta oficial: https://github.com/morhetz/gruvbox
+   ============================================================ */
+
+:root {
+  /* Backgrounds */
+  --gb-bg0-hard: #1d2021;
+  --gb-bg0: #282828;
+  --gb-bg0-soft: #32302f;
+  --gb-bg1: #3c3836;
+  --gb-bg2: #504945;
+
+  /* Foregrounds */
+  --gb-fg0: #fbf1c7;
+  --gb-fg1: #ebdbb2;
+  --gb-fg2: #d5c4a1;
+  --gb-fg3: #bdae93;
+  --gb-fg4: #a89984;
+
+  /* Acentos */
+  --gb-red: #fb4934;
+  --gb-green: #b8bb26;
+  --gb-yellow: #fabd2f;
+  --gb-blue: #83a598;
+  --gb-purple: #d3869b;
+  --gb-aqua: #8ec07c;
+  --gb-orange: #fe8019;
+
+  /* Mapeamento semântico */
+  --bg-primary: var(--gb-bg0);
+  --text-primary: var(--gb-fg1);
+  --sidebar-bg: var(--gb-bg0-hard);
+  --sidebar-hover: var(--gb-bg1);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family:
+    "JetBrains Mono", "Fira Code", "Cascadia Code", "Menlo", "Consolas",
+    monospace;
+}
+
+/* Sidebar */
+#sidebar {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--gb-fg2);
+  border-right: 1px solid var(--gb-bg2);
+}
+
+#sidebar h4 {
+  color: var(--gb-yellow);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+#sidebar a {
+  color: var(--gb-fg2);
+}
+
+#sidebar a:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--gb-orange);
+}
+
+#sidebar .submenu a:hover {
+  color: var(--gb-aqua);
+}
+
+/* Conteúdo */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--gb-yellow);
+  font-weight: 600;
+}
+
+a {
+  color: var(--gb-blue);
+}
+a:hover {
+  color: var(--gb-orange);
+}
+
+/* Cards e tabelas */
+.card,
+.table {
+  background: var(--gb-bg0-soft);
+  color: var(--gb-fg1);
+  border: 1px solid var(--gb-bg2);
+}
+
+.table th {
+  background: var(--gb-bg1);
+  color: var(--gb-yellow);
+  border-color: var(--gb-bg2);
+}
+
+.table td {
+  border-color: var(--gb-bg2);
+  color: var(--gb-fg1);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--gb-bg0-hard);
+  color: var(--gb-fg1);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > * {
+  background-color: var(--gb-bg0);
+  color: var(--gb-fg1);
+}
+
+/* Formulários */
+.form-control,
+.form-select {
+  background: var(--gb-bg0-hard);
+  color: var(--gb-fg1);
+  border: 1px solid var(--gb-bg2);
+}
+
+.form-control::placeholder {
+  color: var(--gb-fg4);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background: var(--gb-bg0-hard);
+  color: var(--gb-fg0);
+  border-color: var(--gb-orange);
+  box-shadow: 0 0 0 0.2rem rgba(254, 128, 25, 0.25);
+}
+
+.form-label {
+  color: var(--gb-fg2);
+}
+
+/* Botões */
+.btn-primary {
+  background: var(--gb-blue);
+  border-color: var(--gb-blue);
+  color: var(--gb-bg0-hard);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: var(--gb-aqua);
+  border-color: var(--gb-aqua);
+  color: var(--gb-bg0-hard);
+}
+
+.btn-success {
+  background: var(--gb-green);
+  border-color: var(--gb-green);
+  color: var(--gb-bg0-hard);
+  font-weight: 600;
+}
+
+.btn-danger {
+  background: var(--gb-red);
+  border-color: var(--gb-red);
+  color: var(--gb-bg0-hard);
+  font-weight: 600;
+}
+
+.btn-warning {
+  background: var(--gb-yellow);
+  border-color: var(--gb-yellow);
+  color: var(--gb-bg0-hard);
+  font-weight: 600;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  background: var(--gb-bg1);
+  border: 1px solid var(--gb-bg2);
+}
+
+.dropdown-item {
+  color: var(--gb-fg1);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: var(--gb-bg2);
+  color: var(--gb-orange);
+}
+
+/* Badges */
+.badge.bg-secondary {
+  background-color: var(--gb-bg2) !important;
+  color: var(--gb-fg1);
+}
+.badge.bg-success {
+  background-color: var(--gb-green) !important;
+  color: var(--gb-bg0-hard);
+}
+.badge.bg-danger {
+  background-color: var(--gb-red) !important;
+  color: var(--gb-bg0-hard);
+}
+.badge.bg-info {
+  background-color: var(--gb-aqua) !important;
+  color: var(--gb-bg0-hard);
+}

@@ -20,17 +20,17 @@ public class ChamadoService {
         return chamadoRepository.findAll();
     }
 
-    public Chamado atualizarChamado(String id, Chamado chamadoAtualizado) {
-        return chamadoRepository.findById(id)
-                .map(chamado -> {
-                    chamado.setDescricao(chamadoAtualizado.getDescricao());
-                    chamado.setStatus(chamadoAtualizado.getStatus());
-                    chamado.setTipo(chamadoAtualizado.getTipo());
-                    chamado.setTecnico(chamadoAtualizado.getTecnico());
-                    chamado.setUsuario(chamadoAtualizado.getUsuario());
-                    return chamadoRepository.save(chamado);
-                })
-                .orElseThrow(() -> new RuntimeException("Chamado não encontrado com id: " + id));
-    }
+  public Chamado atualizarChamado(String id, Chamado atualizado) {
+    return chamadoRepository.findById(id)
+        .map(c -> {
+            if (atualizado.getDescricao() != null) c.setDescricao(atualizado.getDescricao());
+            if (atualizado.getStatus()    != null) c.setStatus(atualizado.getStatus());
+            if (atualizado.getTipo()      != null) c.setTipo(atualizado.getTipo());
+            if (atualizado.getTecnico()   != null) c.setTecnico(atualizado.getTecnico());
+            if (atualizado.getUsuario()   != null) c.setUsuario(atualizado.getUsuario());
+            return chamadoRepository.save(c);
+        })
+        .orElseThrow(() -> new RuntimeException("Chamado não encontrado: " + id));
+} 
 
 }
