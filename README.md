@@ -175,6 +175,118 @@ mvnw.cmd spring-boot:run      # Windows
 http://localhost:8000/login
 ```
 
+## ☁️ MongoDB Atlas
+
+O sistema usa **MongoDB Atlas** (plano gratuito **M0**) como banco. O passo a passo abaixo cobre desde a criação do cluster até a verificação das coleções e índices.
+
+### 1. Criar cluster e usuário
+
+1. Crie uma conta gratuita em https://cloud.mongodb.com
+2. Em **Deployments → Database**, crie um cluster **M0 (Free)**. Escolha a região mais próxima (ex.: `AWS / São Paulo (sa-east-1)`).
+3. O wizard do Atlas cria automaticamente:
+   - um **database user** — anote usuário e senha, pois a senha só aparece uma vez;
+   - uma entrada em **Network Access** com o IP da sua máquina.
+
+### 2. Liberar acesso de rede
+
+Em **Security → Network Access**, garanta que o IP de quem vai rodar o sistema está liberado:
+
+| Ambiente               | Regra sugerida                                          |
+| ---------------------- | ------------------------------------------------------- |
+| Desenvolvimento local  | Adicione o IP da sua máquina                            |
+| Entrega / apresentação | `0.0.0.0/0` (libera todos) — **somente para avaliação** |
+
+> **Por que `0.0.0.0/0` para entrega?** O avaliador provavelmente roda de outra rede; sem essa regra a conexão dele será recusada com `MongoTimeoutException`. Em produção real, use IP fixo.
+
+### 3. Obter a connection string
+
+1. **Deployments → Database → Connect** no cluster.
+2. Escolha **Drivers** (a opção "Node.js Driver" também serve — a URI é a mesma para todos os drivers).
+3. Copie a string no formato:
+
+   ```
+   mongodb+srv://USUARIO:<db_password>@cluster.xxxxx.mongodb.net/?appName=AppName
+   ```
+
+### 4. Ajustar a URI (dois detalhes que quebram a conexão)
+
+A string que o Atlas entrega **não funciona colada direto**. Faça:
+
+**a) Substitua `<db_password>` pela senha real:**
+
+```
+mongodb+srv://USUARIO:MINHA_SENHA@cluster.xxxxx.mongodb.net/?appName=AppName
+```
+
+**b) Insira `/thindesk` antes do `?`.** O Atlas não inclui o nome do banco na URI, e sem ele o Spring usa `test` por padrão — você acabaria com dados espalhados no banco errado:
+
+```
+mongodb+srv://USUARIO:MINHA_SENHA@cluster.xxxxx.mongodb.net/thindesk?appName=AppName
+```
+
+> **Senha com caracteres especiais:** se contiver `@`, `:`, `/`, `?`, `#`, `&` ou `%`, faça **URL-encode** antes de colar. Ex.: `p@ss` → `p%40ss`. Senhas geradas pelo próprio Atlas normalmente são alfanuméricas, mas confira.
+
+### 5. Preencher o `.env`
+
+No arquivo `.env` (que **não vai para o Git** — está no `.gitignore`), defina:
+
+```properties
+MONGO_URI=mongodb+srv://USUARIO:MINHA_SENHA@cluster.xxxxx.mongodb.net/thindesk?appName=AppName
+```
+
+Confira com `grep MONGO_URI .env` que:
+
+- não sobrou `<db_password>` literal;
+- existe `/thindesk` antes do `?`;
+- não há `localhost` no meio.
+
+### 6. Rodar
+
+```bash
+LANG=C.UTF-8 ./mvnw spring-boot:run
+```
+
+Na primeira execução, o `PuzzleImporter` popula a coleção `puzzles_xadrez` **pela rede** (leva alguns segundos). Depois disso, no log:
+
+```
+PuzzleImporter: N puzzles importados com rating <= 1100 (M linhas lidas, ...)
+Started ThindeskApplication in X.XXX seconds
+```
+
+No log do driver, procure `hosts=[...]` com o endereço do cluster (ex.: `loginxadrez-xxxxx.mongodb.net`). Se aparecer `hosts=[localhost:27017]`, o `.env` ainda está apontando para o banco local.
+
+### 7. Verificar no Atlas
+
+Em **Database → Browse Collections**, o banco `thindesk` deve conter:
+
+| Coleção               | Origem                                    |
+| --------------------- | ----------------------------------------- |
+| `usuarios`            | seed (`DataSeeder`) + cadastros públicos  |
+| `puzzles_xadrez`      | importados do CSV do Lichess              |
+| `email_tokens`        | gerados no login / cadastro               |
+| `theme_config`        | criada ao trocar tema (primeira gravação) |
+| `chamados`            | seed (`MongoInitConfig`)                  |
+| `clientes`            | seed (`MongoInitConfig`)                  |
+| `horariosAtendimento` | seed (`MongoInitConfig`)                  |
+
+`theme_config` só aparece depois que alguém troca o tema pela primeira vez — é normal.
+
+### 8. Índices criados automaticamente
+
+Com `spring.data.mongodb.auto-index-creation=true`, o Spring cria:
+
+- **unique** em `usuarios.username` e `usuarios.email`;
+- **unique** em `email_tokens.tokenHash`;
+- **TTL** em `email_tokens.expiraEm` (o MongoDB apaga o documento sozinho após a expiração).
+
+Confira com `mongosh` ou em **Data Explorer → Indexes**:
+
+```javascript
+use thindesk
+db.usuarios.getIndexes()      // _id_, username_1 (unique), email_1 (unique)
+db.email_tokens.getIndexes()  // _id_, tokenHash_1 (unique), expiraEm_1 (TTL)
+```
+
 **Usuário seed** (criado automaticamente na 1ª execução): `admin` / `admin123`
 (alteração obrigatória em produção).
 
@@ -196,7 +308,7 @@ http://localhost:8000/login
 
 Esta seção assume que a app **já está no ar** (`./mvnw spring-boot:run`) escutando em `http://localhost:8000`, e que `MONGO_URI` e `JWT_SECRET` estão preenchidos no `.env`.
 
-> **Dica geral:** abra **dois terminais** — um com o servidor rodando (para ver o log, especialmente o link de confirmação que aparece quando `MAIL_ENABLED=false`) e outro para disparar os `curl`.
+> **dois terminais** — um com o servidor rodando (para ver o log, especialmente o link de confirmação que aparece quando `MAIL_ENABLED=false`) e outro para disparar os `curl`.
 
 ---
 
