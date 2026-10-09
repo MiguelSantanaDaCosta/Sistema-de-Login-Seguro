@@ -36,7 +36,7 @@ public class AdminController {
         List<Usuario> usuarios = usuarioRepository.findAll();
         model.addAttribute("usuarios", usuarios);
         model.addAttribute("content", "admin/usuarios :: content");
-        return "layout";
+        return "admin/usuarios";
     }
 
     @PostMapping("/usuarios/{id}/role")

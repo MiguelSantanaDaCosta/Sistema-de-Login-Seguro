@@ -13,26 +13,27 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" th:href="@{/css/style.css}" />
-
-    <!-- Tema ativo do usuário (injetado pelo GlobalModelAdvice). -->
+    <!-- Tema ativo do usuário (injetado pelo GlobalModelAdvice) -->
     <link
       rel="stylesheet"
-      th:href="@{'/css/themes/' + (${temaAtivo} ?: 'gruvbox-dark') + '.css'}"
+      th:if="${temaAtivo != null}"
+      th:href="@{'/css/themes/' + ${temaAtivo} + '.css'}"
     />
   </head>
-
-  <body th:attr="data-theme=${temaAtivo} ?: 'default'">
+  <body th:attr="data-theme=${temaAtivo}">
+    <!-- Botão para abrir/fechar a sidebar em telas pequenas -->
     <div class="toggle-btn btn btn-dark d-md-none">
       <span>&#9776;</span>
     </div>
 
+    <!-- Sidebar -->
     <aside>
       <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     </aside>
 
-    <!-- Fragmento dinâmico: o controller injeta "template :: content" -->
+    <!-- Conteúdo Principal -->
     <main class="container-fluid mt-4">
-      <div th:replace="${content}"></div>
+      <div th:replace="~{home :: content}"></div>
     </main>
 
     <script th:src="@{/js/script.js}"></script>

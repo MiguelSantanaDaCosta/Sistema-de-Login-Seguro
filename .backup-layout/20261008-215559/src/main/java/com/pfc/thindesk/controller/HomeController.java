@@ -53,7 +53,7 @@ public class HomeController {
         String fragment = "chamados :: content";
         log.info("Carregando fragmento: {}", fragment); // Log para depuração
         model.addAttribute("content", fragment);
-        return "layout";
+        return "chamados";
     }
 
     @GetMapping("/clientes")
@@ -63,7 +63,7 @@ public class HomeController {
         String fragment = "clientes :: content";
         log.info("Carregando fragmento: {}", fragment); // Log para depuração
         model.addAttribute("content", fragment);
-        return "layout";
+        return "clientes";
     }
     
     @GetMapping("/ajustes-horarios")
@@ -73,7 +73,7 @@ public class HomeController {
         String fragment = "ajustes-horarios :: content";
         log.info("Carregando fragmento: {}", fragment); // Log para depuração
         model.addAttribute("content", fragment);
-        return "layout";
+        return "ajustes-horarios";
     }
 
 }

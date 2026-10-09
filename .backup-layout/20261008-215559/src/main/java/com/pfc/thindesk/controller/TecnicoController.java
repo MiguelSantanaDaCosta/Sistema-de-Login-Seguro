@@ -33,7 +33,7 @@ public class TecnicoController {
         model.addAttribute("chamados", chamados);
         model.addAttribute("usuarioAtual", auth.getName());
         model.addAttribute("content", "tecnico/chamados :: content");
-        return "layout";
+        return "tecnico/chamados";
     }
 
     @PostMapping("/chamados/{id}/assumir")

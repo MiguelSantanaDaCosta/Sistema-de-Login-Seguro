@@ -4,11 +4,14 @@
 // Descrição: Endpoints dos links enviados por email.
 //            O token no query string é a credencial.
 // ============================================================
+//
 package com.pfc.thindesk.controller;
 
 import java.time.Duration;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -27,67 +30,93 @@ import com.pfc.thindesk.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-// Controller dos links de confirmação enviados por e-mail.
+/**
+ * Destino dos links enviados por email (rotas públicas: o token é a
+ * credencial).
+ * - GET /auth/confirmar?token=... -> conclui o LOGIN (seta o cookie final e vai
+ * para "/")
+ * - GET /auth/confirmar-registro?token=... -> ativa a conta (vai para
+ * /login?confirmado=1)
+ * Falhas caem em /login?erro=link-invalido (sem detalhes para o usuário); o
+ * MOTIVO real
+ * é registrado no log do servidor.
+ */
 @Controller
 @RequestMapping("/auth")
 public class ConfirmacaoController {
 
-    // pre = senha ok, puzzle pendente
-    // auth = autenticado de fato
-    private static final String COOKIE_PRE  = "thindesk_pre";
+    private static final Logger log = LoggerFactory.getLogger(ConfirmacaoController.class);
+
+    // Cookie do token preAuth, apagado ao concluir o login.
+    private static final String COOKIE_PRE = "thindesk_pre";
+
+    // Cookie HttpOnly com o token FINAL (usuário autenticado de fato).
     private static final String COOKIE_AUTH = "thindesk_auth";
 
-    @Autowired private EmailTokenService emailTokenService;
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private UsuarioService usuarioService;
-    @Autowired private JwtUtil jwtUtil;
+    // Consome (apaga, de forma atômica) o token e devolve o dono.
+    @Autowired
+    private EmailTokenService emailTokenService;
 
+    // Carrega o usuário dono do token.
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    // Ativa a conta no fluxo de confirmação de cadastro.
+    @Autowired
+    private UsuarioService usuarioService;
+
+    // Emite o JWT final depois que o link é validado.
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // Validade do cookie de autenticação, em milissegundos.
     @Value("${app.jwt.expiration-ms}")
     private long expirationMs;
 
-    // Link de LOGIN: gera o token final
-    // Link de LOGIN: consome o token e emite o JWT final (cookie thindesk_auth).
+    // Link de login: consome o token, grava o cookie final e vai para "/"; se
+    // inválido, /login?erro.
     @GetMapping("/confirmar")
     public String confirmarLogin(@RequestParam(required = false) String token, HttpServletResponse response) {
 
-        // Consome o token (uso único)
-        Optional<String> dono = emailTokenService.consumir(token, TipoToken.LOGIN);
+        Optional<String> dono = emailTokenService.consumir(token, TipoToken.LOGIN); // uso único
         if (dono.isEmpty()) {
+            log.warn("Link de LOGIN recusado: token inexistente, vencido ou já usado "
+                    + "(email antigo? link já aberto? relógio do PC?)");
             return "redirect:/login?erro=link-invalido";
         }
 
         Optional<Usuario> usuario = usuarioRepository.findByUsername(dono.get());
         if (usuario.isEmpty() || !usuario.get().isAtivo()) {
+            log.warn("Link de LOGIN recusado: usuário '{}' não existe ou está inativo", dono.get());
             return "redirect:/login?erro=link-invalido";
         }
 
-        // Aqui nasce o token final (preAuth=false)
+        // Aqui, e só aqui, nasce o token FINAL (preAuth=false) em cookie HttpOnly
         String finalToken = jwtUtil.gerarToken(usuario.get().getUsername(), false);
-
         ResponseCookie auth = ResponseCookie.from(COOKIE_AUTH, finalToken)
                 .httpOnly(true)
-                .secure(false) // trocar para true em produção (HTTPS)
+                .secure(false) // secure(true) em produção (HTTPS)
                 .path("/")
                 .maxAge(Duration.ofMillis(expirationMs))
                 .sameSite("Lax")
                 .build();
-
-        // preAuth já cumpriu o papel
         ResponseCookie limpaPre = ResponseCookie.from(COOKIE_PRE, "")
                 .httpOnly(true).path("/").maxAge(0).build();
-
         response.addHeader(HttpHeaders.SET_COOKIE, auth.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, limpaPre.toString());
 
+        log.info("Login concluído pelo link do email: usuário '{}'", usuario.get().getUsername());
         return "redirect:/";
     }
 
-    // Link de CADASTRO: ativa a conta
-    // Link de CADASTRO: ativa a conta ao clicar.
+    // Link de cadastro: ativa a conta e vai para /login?confirmado=1; se inválido,
+    // /login?erro.
     @GetMapping("/confirmar-registro")
     public String confirmarRegistro(@RequestParam(required = false) String token) {
-        return usuarioService.confirmarRegistro(token)
-                ? "redirect:/login?confirmado=1"
-                : "redirect:/login?erro=link-invalido";
+        boolean ok = usuarioService.confirmarRegistro(token);
+        if (!ok) {
+            log.warn("Link de CADASTRO recusado: token inexistente, vencido ou já usado");
+        }
+        return ok ? "redirect:/login?confirmado=1" : "redirect:/login?erro=link-invalido";
     }
 }
