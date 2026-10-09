@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// Entidade do puzzle de xadrez (id do Lichess, FEN, lance correto, rating).
 @Document(collection = "puzzles_xadrez")
 @Data
 @NoArgsConstructor

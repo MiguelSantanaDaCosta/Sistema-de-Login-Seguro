@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
  * Payload do endpoint POST /api/auth/registrar.
  * As regras de validação ficam aqui (Bean Validation) e são disparadas por @Valid no controller.
  */
+// Payload do POST /api/auth/registrar (Bean Validation).
 public class RegistroRequest {
 
     @NotBlank(message = "O nome de usuário é obrigatório.")

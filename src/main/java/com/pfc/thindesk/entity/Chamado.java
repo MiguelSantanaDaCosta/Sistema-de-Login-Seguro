@@ -1,3 +1,8 @@
+// ============================================================
+// Chamado.java
+// Autor: Miguel Santana
+// Descrição: Chamado de suporte técnico (descrição, status, tipo, técnico, usuário).
+// ============================================================
 package com.pfc.thindesk.entity;
 
 import org.springframework.data.annotation.Id;

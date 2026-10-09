@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 
 //Token de uso único enviado por email.
+// Token de uso único enviado por e-mail (guardamos o hash).
 @Document(collection = "email_tokens")
 @Data
 @NoArgsConstructor
@@ -29,6 +30,7 @@ public class EmailToken {
     private TipoToken tipo;
 
     /** Índice TTL: o MongoDB apaga o documento sozinho depois desta data. */
+    // Índice TTL: o MongoDB apaga o documento sozinho após esta data.
     @Indexed(expireAfterSeconds = 0)
     private Instant expiraEm;
 }

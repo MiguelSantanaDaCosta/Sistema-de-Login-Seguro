@@ -20,6 +20,7 @@ import com.pfc.thindesk.entity.Usuario;
 import com.pfc.thindesk.repository.PuzzleXadrezRepository;
 import com.pfc.thindesk.repository.UsuarioRepository;
 
+// Serviço responsável pelas regras do 2FA via puzzle de xadrez.
 @Service
 public class PuzzleService {
 
@@ -52,12 +53,14 @@ public class PuzzleService {
     private int maxTentativas;
 
     // Início da sessão: zera contador e sorteia o primeiro
+    // Inicia a sessão do usuário, resetando contadores e sorteando o primeiro puzzle.
     public PuzzleXadrez iniciarSessao(Usuario usuario) {
         usuario.setPuzzlesNaSessao(0);
         return emitir(usuario);
     }
 
     // Troca de puzzle, respeitando o teto
+    // Gera um novo puzzle, respeitando o limite máximo por sessão.
     public PuzzleXadrez renovar(Usuario usuario) {
         if (usuario.getPuzzlesNaSessao() >= maxPuzzlesPorSessao) {
             limpar(usuario);
@@ -66,7 +69,7 @@ public class PuzzleService {
         return emitir(usuario);
     }
 
-    // Puzzle ativo, se houver
+    // Retorna o puzzle ativo do usuário, se houver.
     public Optional<PuzzleXadrez> atual(Usuario usuario) {
         if (usuario.getPuzzleAtualId() == null) {
             return Optional.empty();
@@ -74,13 +77,13 @@ public class PuzzleService {
         return puzzleRepository.findById(usuario.getPuzzleAtualId());
     }
 
-    // Verifica prazo
+    // Verifica se o prazo do puzzle atual expirou.
     public boolean expirou(Usuario usuario) {
         return usuario.getPuzzleExpiraEm() == null
                 || System.currentTimeMillis() > usuario.getPuzzleExpiraEm();
     }
 
-    // Encerra o ciclo do puzzle
+    // Limpa o estado do puzzle (usado ao concluir ou falhar).
     public void limpar(Usuario usuario) {
         usuario.setPuzzleAtualId(null);
         usuario.setPuzzleExpiraEm(null);
@@ -90,6 +93,7 @@ public class PuzzleService {
     }
 
     // JSON enviado ao front (sem o lanceCorreto)
+    // Monta o JSON do puzzle para o front (sem o lance correto).
     public Map<String, Object> dados(PuzzleXadrez puzzle, Usuario usuario) {
         long restanteMs = usuario.getPuzzleExpiraEm() == null
                 ? 0
@@ -109,7 +113,7 @@ public class PuzzleService {
         return m;
     }
 
-    // Sorteia e ativa um puzzle no usuário
+    // Sorteia um puzzle no banco e o ativa para o usuário.
     private PuzzleXadrez emitir(Usuario usuario) {
         // Não sorteia o puzzle atual de novo
         String excluir = usuario.getPuzzleAtualId() == null ? "" : usuario.getPuzzleAtualId();

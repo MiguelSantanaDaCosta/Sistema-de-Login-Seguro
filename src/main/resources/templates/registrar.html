@@ -26,6 +26,7 @@
     <div class="card-registro">
       <h3 class="text-center mb-4">Criar conta</h3>
 
+      <!-- Formulário de cadastro; envia dados para /api/auth/registrar. -->
       <form id="registroForm" novalidate>
         <div class="mb-3">
           <label for="nomeCompleto" class="form-label">Nome completo</label>
@@ -106,6 +107,7 @@
           };
 
           try {
+            <!-- Chamada à API de registro; exibe mensagem de sucesso ou erro. -->
             const resp = await fetch("/api/auth/registrar", {
               method: "POST",
               headers: { "Content-Type": "application/json" },

@@ -10,12 +10,14 @@ package com.pfc.thindesk.util;
  * apenas
  * atualiza peças, roque, en passant e contadores.
  */
+// Utilitário para aplicar um lance UCI a um FEN (usado na importação).
 public final class FenUtil {
 
     private FenUtil() {
     }
 
     /** Aplica o lance UCI ao FEN e devolve o novo FEN completo. */
+    // Aplica o lance, atualizando peças, roque, en passant e contadores.
     public static String aplicarLance(String fen, String lance) {
         if (fen == null || lance == null || lance.length() < 4) {
             throw new IllegalArgumentException("FEN ou lance inválido");

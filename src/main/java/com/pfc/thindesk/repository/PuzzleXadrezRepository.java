@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.pfc.thindesk.entity.PuzzleXadrez;
 
+// Acesso aos puzzles do Lichess importados.
 public interface PuzzleXadrezRepository extends MongoRepository<PuzzleXadrez, String> {
 
     /**
@@ -16,5 +17,6 @@ public interface PuzzleXadrezRepository extends MongoRepository<PuzzleXadrez, St
             "{ $match: { rating: { $lte: ?0 }, _id: { $ne: ?1 } } }",
             "{ $sample: { size: 1 } }"
     })
+    // Sorteia 1 puzzle com rating <= ratingMax, diferente de excluirId.
     List<PuzzleXadrez> sortearAteRating(int ratingMax, String excluirId);
 }

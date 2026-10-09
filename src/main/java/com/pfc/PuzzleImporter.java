@@ -21,6 +21,7 @@ import java.util.List;
 
   //Importa puzzles do banco público do Lichess (licença CC0) para a coleção puzzles_xadrez.
 
+// Importa puzzles do Lichess (CSV) para a coleção puzzles_xadrez no boot.
 @Component
 public class PuzzleImporter implements CommandLineRunner {
 
@@ -35,6 +36,7 @@ public class PuzzleImporter implements CommandLineRunner {
     @Value("${app.security.puzzle.rating-max:1100}")
     private int ratingMax;
 
+    // Verifica se a coleção está vazia e importa em lotes de 500.
     @Override
     public void run(String... args) {
         if (puzzleXadrezRepository.count() > 0) {
@@ -90,6 +92,7 @@ public class PuzzleImporter implements CommandLineRunner {
     
      //Converte uma linha do CSV em PuzzleXadrez, ou devolve null se o puzzle não servir
      
+    // Converte uma linha do CSV em PuzzleXadrez (filtra por rating).
     private PuzzleXadrez converter(String linha) {
         String[] c = linha.split(",", -1);
         if (c.length < 8) {

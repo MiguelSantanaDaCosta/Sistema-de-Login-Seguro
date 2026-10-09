@@ -14,6 +14,7 @@ import java.util.Set;
  * Seed inicial: cria o usuário administrador padrão se ele não existir.
  * Os puzzles de xadrez são carregados pelo PuzzleImporter.
  */
+// Seed inicial: cria o usuário admin padrão se não existir.
 @Component
 public class DataSeeder implements CommandLineRunner {
 

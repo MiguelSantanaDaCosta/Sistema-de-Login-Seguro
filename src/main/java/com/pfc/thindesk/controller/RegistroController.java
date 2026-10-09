@@ -27,6 +27,7 @@ import jakarta.validation.Valid;
 //Cadastro público em 2 etapas.
 //  - GET  /registrar           -> página HTML
 //  - POST /api/auth/registrar  -> etapa 1: cria usuário PENDENTE e envia o email
+// Cadastro público em 2 etapas (GET página + POST que envia e-mail).
 @Controller
 public class RegistroController {
 
@@ -44,6 +45,7 @@ public class RegistroController {
         return "registrar";
     }
 
+    // Valida o payload e delega ao UsuarioService.registrar.
     @PostMapping("/api/auth/registrar")
     @ResponseBody
     public ResponseEntity<?> registrar(@Valid @RequestBody RegistroRequest req, BindingResult resultado) {

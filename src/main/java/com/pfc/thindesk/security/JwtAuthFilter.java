@@ -23,6 +23,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+// Filtro que lê o JWT e popula o SecurityContext (ignora preAuth).
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -31,6 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Autowired private JwtUtil jwtUtil;
     @Autowired private UsuarioService usuarioService;
 
+    // Intercepta a requisição e autentica o usuário, se o token for final.
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -56,6 +58,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     // Tenta header primeiro, depois cookie
+    // Obtém o token do header Authorization ou do cookie thindesk_auth.
     private String extrairToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {

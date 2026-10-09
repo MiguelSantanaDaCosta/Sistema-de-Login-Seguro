@@ -49,6 +49,7 @@ public class UsuarioService implements UserDetailsService {
      * - gera token de registro (uso único, com TTL) e envia por email
      * - devolve o token bruto (usado pelo RegistroController para o modo dev)
      */
+    // Etapa 1 do cadastro público: cria usuário pendente e envia token por e-mail.
     public String registrar(RegistroRequest req) {
         String username = req.username.trim();
         String email = req.email.trim().toLowerCase(); // email sempre em minúsculas
@@ -79,6 +80,7 @@ public class UsuarioService implements UserDetailsService {
      * Etapa 2 do cadastro público: consome o token de REGISTRO e ativa a conta.
      * Retorna true se o token era válido; false caso contrário.
      */
+    // Etapa 2: consome o token de registro e ativa a conta.
     public boolean confirmarRegistro(String token) {
         Optional<String> dono = emailTokenService.consumir(token, TipoToken.REGISTRO);
         if (dono.isEmpty()) {
@@ -94,6 +96,7 @@ public class UsuarioService implements UserDetailsService {
                 .orElse(false);
     }
 
+    // Carrega o usuário para autenticação (ativo e roles).
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository.findByUsername(username)

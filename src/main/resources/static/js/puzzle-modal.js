@@ -28,6 +28,7 @@
 
   // ---------- Ciclo de vida ----------
 
+  // Abre o modal do puzzle e inicializa o tabuleiro chessboard.js.
   function abrir(dados, opts) {
     opcoes = opts || {};
     game = new Chess();
@@ -102,6 +103,7 @@
 
   // ---------- Carregar um puzzle (inicial ou novo) ----------
 
+  // Carrega um puzzle (inicial ou novo) e inicia o cronômetro.
   function carregar(dados) {
     puzzle = dados;
     travado = false;
@@ -128,6 +130,7 @@
 
   // ---------- Cronômetro ----------
 
+  // Inicia o cronômetro regressivo do puzzle atual.
   function iniciarTimer(restanteSeg, limiteSeg) {
     pararTimer();
     totalMs = Math.max(1, limiteSeg) * 1000;
@@ -153,6 +156,7 @@
     if (resta <= 0 && !travado) tempoEsgotado();
   }
 
+  // Chamado quando o tempo acaba; pede novo puzzle ao servidor.
   async function tempoEsgotado() {
     travado = true;
     pararTimer();
@@ -180,6 +184,7 @@
 
   // ---------- Arrastar e soltar ----------
 
+  // Valida a peça arrastada e mostra dicas das casas legais.
   function aoComecarArrasto(origem, peca) {
     if (aguardando || travado || game.game_over()) return false;
 
@@ -194,6 +199,7 @@
     lances.forEach((m) => marcar(m.to, m.captured ? "dica-captura" : "dica"));
   }
 
+  // Processa o lance do usuário e envia para o servidor.
   function aoSoltar(origem, destino) {
     limparDicas();
     if (destino === "offboard" || origem === destino) return "snapback";
@@ -219,6 +225,7 @@
     aguardando = false;
   }
 
+  // Envia o lance para /api/auth/resolver-puzzle e trata a resposta.
   async function enviar(uci, destino) {
     mensagem("Verificando...", "info");
     try {
@@ -274,6 +281,7 @@
    * Puzzle resolvido: o login só termina quando o usuário abrir o link enviado por email.
    * Ao fechar, a página recarrega para restaurar o pop-up limpo (sem refazer o DOM à mão).
    */
+  // Exibe mensagem de sucesso e instrui o usuário a checar o e-mail.
   function mostrarEmailEnviado(dados) {
     const corpo = document.querySelector("#puzzleModal .modal-body");
     corpo.innerHTML = "";

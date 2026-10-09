@@ -8,6 +8,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+// Serviço de envio de e-mails (links de login e registro).
 @Service
 public class EmailService {
 
@@ -28,15 +29,18 @@ public class EmailService {
     @Value("${app.security.email-token.registro-horas:24}")
     private long registroHoras;
 
+    // Monta o link de confirmação de login.
     public String linkLogin(String token) {
         return baseUrl + "/auth/confirmar?token=" + token;
     }
 
+    // Monta o link de confirmação de registro.
     public String linkRegistro(String token) {
         return baseUrl + "/auth/confirmar-registro?token=" + token;
     }
 
     // Email do login: enviado depois que o usuário resolve o puzzle. 
+    // Envia e-mail com link para concluir o login após o puzzle.
     public void enviarTokenConfirmacao(String destinatario, String token) {
         String link = linkLogin(token);
         String corpo = "Você resolveu o puzzle!\n\n"
@@ -47,6 +51,7 @@ public class EmailService {
     }
 
     //Email do cadastro: confirma que o endereço é do usuário e ativa a conta. */
+    // Envia e-mail com link para ativar a conta após o cadastro.
     public void enviarTokenRegistro(String destinatario, String token) {
         String link = linkRegistro(token);
         String corpo = "Bem-vindo ao Thindesk!\n\n"
@@ -56,6 +61,7 @@ public class EmailService {
         enviar(destinatario, "Thindesk — Confirme o seu cadastro", corpo, link);
     }
 
+    // Método interno: envia de verdade ou exibe o link no console se o mail estiver desabilitado.
     private void enviar(String destinatario, String assunto, String corpo, String link) {
         if (!mailEnabled || mailSender == null) {
             log.warn("=== MAIL DESABILITADO — {} ===", assunto);

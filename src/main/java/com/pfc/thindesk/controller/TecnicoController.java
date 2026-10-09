@@ -50,12 +50,11 @@ public class TecnicoController {
         return "redirect:/tecnico/chamados";
     }
 
+    // TODO: ChamadoService.atualizarChamado hoje sobrescreve todos os campos; avaliar patch parcial.
     private Chamado montarAtualizacao(String status, String tecnico) {
         Chamado c = new Chamado();
         c.setStatus(status);
         c.setTecnico(tecnico);
-        // Os demais campos permanecem os do banco (Service só sobrescreve os não-nulos?)
-        // Ajuste no Service se quiser patch parcial — hoje ele sobrescreve tudo.
         return c;
     }
 }

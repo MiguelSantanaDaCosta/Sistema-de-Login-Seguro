@@ -21,6 +21,7 @@ import com.pfc.thindesk.security.JwtAuthFilter;
 
 import jakarta.servlet.DispatcherType;
 
+// Configuração de segurança baseada em sessão (form login + regras por rota).
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // habilita @PreAuthorize nos controllers
@@ -38,6 +39,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    // Regras de autorização por rota e configuração de login/logout.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http

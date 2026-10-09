@@ -44,6 +44,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *  3) GET /auth/confirmar?token=...  (ConfirmacaoController) -> consome o token e seta thindesk_auth
  *  /novo-puzzle: o navegador chama quando o cronômetro zera (o servidor confere o prazo).
  */
+// Controller do login em 3 fatores: senha, puzzle e e-mail.
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -273,6 +274,7 @@ public class AuthController {
     }
 
     /** Valida o token preAuth (header ou cookie) e devolve o usuário dono dele. */
+    // Extrai e valida o token pré-auth (header ou cookie).
     private Usuario usuarioDoPreAuth(String header, HttpServletRequest request) {
         String token = extrairTokenDeHeaderOuCookie(header, request, COOKIE_PRE);
         if (token == null) {
@@ -290,6 +292,7 @@ public class AuthController {
     }
 
     /** "maria@exemplo.com" -> "m***@exemplo.com" */
+    // Mascara o e-mail para exibição segura (ex.: m***@exemplo.com).
     private String mascarar(String email) {
         int arroba = email.indexOf('@');
         if (arroba <= 1) {

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+// Utilitário para geração e validação de tokens JWT.
 @Component
 public class JwtUtil {
 
@@ -29,6 +30,7 @@ public class JwtUtil {
     }
 
     // Gera token com claim preAuth
+    // Gera JWT com username e a claim preAuth.
     public String gerarToken(String username, boolean isPreAuth) {
         return Jwts.builder()
                 .subject(username)
@@ -39,7 +41,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Subject = username
+    // Extrai o username (subject) do token.
     public String extrairUsername(String token) {
         return Jwts.parser()
                 .verifyWith(getSigninKey())
@@ -49,7 +51,7 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Claim preAuth
+    // Extrai a claim preAuth.
     public Boolean extrairPreAuth(String token) {
         return Jwts.parser()
                 .verifyWith(getSigninKey())
@@ -59,7 +61,6 @@ public class JwtUtil {
                 .get("preAuth", Boolean.class);
     }
 
-    // Retorna false em vez de lançar exceção
     public boolean isTokenValido(String token) {
         try {
             Jwts.parser().verifyWith(getSigninKey()).build().parseSignedClaims(token);

@@ -1,3 +1,8 @@
+// ============================================================
+// HorarioAtendimento.java
+// Autor: Miguel Santana
+// Descrição: Horário de atendimento por setor (dia da semana + faixa início/fim).
+// ============================================================
 package com.pfc.thindesk.entity;
 
 import lombok.AllArgsConstructor;

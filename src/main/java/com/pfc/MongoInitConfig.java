@@ -5,6 +5,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+// Cria as coleções do MongoDB na primeira execução.
 @Configuration
 public class MongoInitConfig implements CommandLineRunner {
 

@@ -22,6 +22,7 @@ import com.pfc.thindesk.entity.TipoToken;
 import com.pfc.thindesk.repository.EmailTokenRepository;
 
 /** Gera e consome tokens de uso único enviados por email (login e registro). */
+// Gera e consome tokens de uso único enviados por e-mail.
 @Service
 public class EmailTokenService {
 
@@ -42,6 +43,7 @@ public class EmailTokenService {
      * anteriores do
      * mesmo usuário e tipo são apagados: apenas o último link enviado vale.
      */
+    // Gera token aleatório, salva o hash e devolve o valor bruto (vai no e-mail).
     public String gerar(String username, TipoToken tipo) {
         repository.deleteByUsernameAndTipo(username, tipo);
 
@@ -63,6 +65,7 @@ public class EmailTokenService {
     }
 
     // Consome o token apaga e devolve o username
+    // Consome o token (apaga do banco) e devolve o username, se válido.
     public Optional<String> consumir(String token, TipoToken tipo) {
         if (token == null || token.isBlank() || token.length() > 100) {
             return Optional.empty();
@@ -83,11 +86,11 @@ public class EmailTokenService {
         repository.deleteByUsernameAndTipo(username, tipo);
     }
 
-    // Validade em minutos
     public long validadeMinutos(TipoToken tipo) {
         return tipo == TipoToken.LOGIN ? loginMinutos : registroHoras * 60;
     }
 
+    // Gera o hash SHA-256 do token para armazenamento seguro.
     private static String hash(String token) {
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-256");

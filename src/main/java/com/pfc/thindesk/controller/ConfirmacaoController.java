@@ -27,6 +27,7 @@ import com.pfc.thindesk.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+// Controller dos links de confirmação enviados por e-mail.
 @Controller
 @RequestMapping("/auth")
 public class ConfirmacaoController {
@@ -45,6 +46,7 @@ public class ConfirmacaoController {
     private long expirationMs;
 
     // Link de LOGIN: gera o token final
+    // Link de LOGIN: consome o token e emite o JWT final (cookie thindesk_auth).
     @GetMapping("/confirmar")
     public String confirmarLogin(@RequestParam(required = false) String token, HttpServletResponse response) {
 
@@ -81,6 +83,7 @@ public class ConfirmacaoController {
     }
 
     // Link de CADASTRO: ativa a conta
+    // Link de CADASTRO: ativa a conta ao clicar.
     @GetMapping("/confirmar-registro")
     public String confirmarRegistro(@RequestParam(required = false) String token) {
         return usuarioService.confirmarRegistro(token)

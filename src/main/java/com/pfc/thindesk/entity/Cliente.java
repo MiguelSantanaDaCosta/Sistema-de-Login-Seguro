@@ -1,3 +1,8 @@
+// ============================================================
+// Cliente.java
+// Autor: Miguel Santana
+// Descrição: Cliente atendido pelo sistema (nome, telefone, setor).
+// ============================================================
 package com.pfc.thindesk.entity;
 
 import org.springframework.data.annotation.Id;

@@ -36,6 +36,7 @@ public class Usuario {
      * false somente enquanto o cadastro público aguarda a confirmação do email.
      * Contas antigas/seed (sem o campo) valem como confirmadas.
      */
+    // false apenas enquanto o cadastro público aguarda confirmação.
     private boolean emailConfirmado = true;
 
     private Set<Role> roles = new HashSet<>();
@@ -44,8 +45,10 @@ public class Usuario {
     /** Erros no puzzle atual. */
     private int tentativasPuzzle = 0;
     /** Id do puzzle que este usuário deve resolver agora (null = nenhum ativo). */
+    // ID do puzzle que o usuário deve resolver agora.
     private String puzzleAtualId;
     /** Instante (epoch em ms) em que o puzzle atual expira. */
+    // Timestamp (epoch ms) de expiração do puzzle atual.
     private Long puzzleExpiraEm;
     /** Quantos puzzles já foram emitidos neste login. */
     private int puzzlesNaSessao = 0;
