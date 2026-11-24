@@ -1,0 +1,87 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><span style="color:#d11a2a">&#9819;</span> Painel root</h2>
+    <form th:action="@{/api/auth/logout}" method="post" onsubmit="event.preventDefault(); fetch('/api/auth/logout',{method:'POST'}).then(()=>location='/login');">
+      <button class="btn btn-sm btn-outline-secondary">Sair</button>
+    </form>
+  </div>
+  <div class="alert alert-warning py-2">Acesso total ao banco de dados. Alterações e exclusões são <b>irreversíveis</b>.</div>
+
+  <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+  <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item" th:each="b : ${bancos}">
+      <a class="nav-link" th:classappend="${b == db} ? 'active'" th:href="@{/root(db=${b})}" th:text="${b}"></a>
+    </li>
+  </ul>
+
+  <div class="row">
+    <div class="col-md-3 mb-3">
+      <div class="list-group">
+        <a th:each="c : ${colecoes}" th:href="@{/root(db=${db},col=${c[0]})}"
+           class="list-group-item list-group-item-action d-flex justify-content-between"
+           th:classappend="${c[0] == col} ? 'active'">
+          <span th:text="${c[0]}"></span>
+          <span class="badge bg-secondary" th:text="${c[1]}"></span>
+        </a>
+        <div th:if="${#lists.isEmpty(colecoes)}" class="list-group-item text-muted">Sem coleções.</div>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+      <div th:if="${col == null}" class="text-muted">Escolha uma coleção.</div>
+
+      <div th:if="${col != null}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0"><span th:text="${col}"></span> <small class="text-muted" th:text="${total} + ' documento(s)'"></small></h5>
+          <form th:action="@{/root/colecao/excluir}" method="post"
+                onsubmit="return confirm('APAGAR a coleção inteira? Isso não pode ser desfeito.')">
+            <input type="hidden" name="db" th:value="${db}" />
+            <input type="hidden" name="col" th:value="${col}" />
+            <button class="btn btn-sm btn-outline-danger">Excluir coleção</button>
+          </form>
+        </div>
+
+        <details class="mb-3">
+          <summary class="btn btn-sm btn-outline-primary">+ Inserir / substituir documento (JSON)</summary>
+          <form th:action="@{/root/doc/salvar}" method="post" class="mt-2">
+            <input type="hidden" name="db" th:value="${db}" />
+            <input type="hidden" name="col" th:value="${col}" />
+            <textarea name="json" class="form-control font-monospace" rows="6" placeholder='{"campo": "valor"}  (com _id = substitui)'></textarea>
+            <button class="btn btn-sm btn-primary mt-2">Salvar</button>
+          </form>
+        </details>
+
+        <div class="card mb-2" th:each="d : ${docs}">
+          <div class="card-body p-2">
+            <pre class="mb-2 small" style="max-height: 220px; overflow:auto" th:text="${d.json}"></pre>
+            <details>
+              <summary class="btn btn-sm btn-outline-secondary">Editar</summary>
+              <form th:action="@{/root/doc/salvar}" method="post" class="mt-2">
+                <input type="hidden" name="db" th:value="${db}" />
+                <input type="hidden" name="col" th:value="${col}" />
+                <textarea name="json" class="form-control font-monospace" rows="10" th:text="${d.json}"></textarea>
+                <button class="btn btn-sm btn-primary mt-2">Salvar alterações</button>
+              </form>
+            </details>
+            <form th:action="@{/root/doc/excluir}" method="post" class="d-inline"
+                  onsubmit="return confirm('Excluir este documento?')">
+              <input type="hidden" name="db" th:value="${db}" />
+              <input type="hidden" name="col" th:value="${col}" />
+              <input type="hidden" name="filtro" th:value="${d.filtro}" />
+              <button class="btn btn-sm btn-danger mt-2">Excluir</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-2">
+          <a th:if="${pagina > 0}" class="btn btn-sm btn-outline-secondary"
+             th:href="@{/root(db=${db},col=${col},pagina=${pagina - 1})}">&laquo; Anterior</a>
+          <a th:if="${(pagina + 1) * porPagina < total}" class="btn btn-sm btn-outline-secondary"
+             th:href="@{/root(db=${db},col=${col},pagina=${pagina + 1})}">Próxima &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

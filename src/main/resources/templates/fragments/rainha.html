@@ -1,0 +1,24 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+  <!-- Rainha vermelha: canto da tela. Anônimo -> desafio; ROOT -> painel do banco. -->
+  <div th:fragment="rainha" th:if="${@rootProps.habilitado}">
+    <a sec:authorize="hasRole('ROOT')" th:href="@{/root}" class="rainha-root ativa"
+       title="Painel root">&#9819;</a>
+    <a sec:authorize="!hasRole('ROOT')" th:href="@{/root/desafio}" class="rainha-root"
+       title="Você ousa?">&#9819;</a>
+    <style>
+      .rainha-root {
+        position: fixed; right: 18px; bottom: 14px; z-index: 2000;
+        font-size: 2.6rem; line-height: 1; text-decoration: none;
+        color: #d11a2a; text-shadow: 0 0 6px rgba(209, 26, 42, 0.6);
+        opacity: 0.55; transition: opacity .2s, transform .2s;
+      }
+      .rainha-root:hover { opacity: 1; transform: scale(1.15) rotate(-6deg); color: #ff2b3d; }
+      .rainha-root.ativa { opacity: 1; animation: rainha-pulso 1.6s infinite; }
+      @keyframes rainha-pulso { 50% { text-shadow: 0 0 16px #ff2b3d; } }
+    </style>
+  </div>
+</body>
+</html>

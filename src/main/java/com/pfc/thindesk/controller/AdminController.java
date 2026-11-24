@@ -45,6 +45,9 @@ public class AdminController {
         usuarioRepository.findById(id).ifPresent(u -> {
             try {
                 Role novo = Role.valueOf(role);
+                if (novo == Role.ROLE_ROOT || u.getRoles().contains(Role.ROLE_ROOT)) {
+                    return; // ROOT só se obtém pelo desafio; nunca é atribuído/removido aqui
+                }
                 u.setRoles(Set.of(novo));
                 usuarioRepository.save(u);
             } catch (IllegalArgumentException ignored) {

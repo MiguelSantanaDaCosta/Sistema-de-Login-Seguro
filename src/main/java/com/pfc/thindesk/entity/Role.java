@@ -8,5 +8,7 @@ package com.pfc.thindesk.entity;
 public enum Role {
     ROLE_ADMIN,
     ROLE_TECNICO,
-    ROLE_USUARIO    
+    ROLE_USUARIO,
+    /** Perfil "piada": só se obtém vencendo o desafio da rainha vermelha (ver RootDesafioService). */
+    ROLE_ROOT
 }

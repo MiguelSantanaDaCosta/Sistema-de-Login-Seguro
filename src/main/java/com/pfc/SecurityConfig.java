@@ -58,11 +58,16 @@ public class SecurityConfig {
                                 "/puzzle",
                                 "/auth/confirmar",
                                 "/auth/confirmar-registro",
+                                "/root/desafio",          // desafio da rainha vermelha (público)
+                                "/api/root/desafio/**",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
                                 "/error")
                         .permitAll()
+
+                        // Painel root (banco de dados): só ROLE_ROOT, obtida pelo desafio
+                        .requestMatchers("/root/**").hasRole("ROOT")
 
                         // Áreas HTML por perfil
                         .requestMatchers("/admin/**").hasRole("ADMIN")

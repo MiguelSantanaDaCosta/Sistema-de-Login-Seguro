@@ -41,6 +41,18 @@
             </a>
           </li>
 
+          <!-- Painel root (banco de dados) — só ROOT -->
+          <li
+            class="nav-item"
+            sec:authorize="hasRole('ROOT')"
+            xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+          >
+            <a class="nav-link text-danger" th:href="@{/root}">
+              <i class="bi bi-database-fill-gear"></i>
+              <span class="d-none d-md-inline">Banco (root)</span>
+            </a>
+          </li>
+
           <!-- Área admin — só ADMIN -->
           <li
             class="nav-item"

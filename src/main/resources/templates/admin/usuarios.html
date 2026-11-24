@@ -19,6 +19,7 @@
                 method="post" class="d-flex">
             <select name="role" class="form-select form-select-sm me-2">
               <option th:each="r : ${T(com.pfc.thindesk.entity.Role).values()}"
+                      th:unless="${r.name() == 'ROLE_ROOT'}"
                       th:value="${r.name()}"
                       th:text="${r.name()}"
                       th:selected="${u.roles.contains(r)}"></option>
