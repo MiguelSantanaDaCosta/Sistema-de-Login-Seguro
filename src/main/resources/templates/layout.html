@@ -32,7 +32,9 @@
 
     <!-- Fragmento dinâmico: o controller injeta "template :: content" -->
     <main class="container-fluid mt-4">
-      <div th:replace="${content}"></div>
+      <!-- content = "template :: fragmento". O Thymeleaf 3.1 não aceita mais essa string inteira no th:replace;
+           o separador é montado com ':'+':' para o parser de fragmentos não cortar a expressão. -->
+      <div th:replace="~{${#strings.trim(#strings.substringBefore(content, ':' + ':'))} :: ${#strings.trim(#strings.substringAfter(content, ':' + ':'))}}"></div>
     </main>
 
     <script th:src="@{/js/script.js}"></script>
