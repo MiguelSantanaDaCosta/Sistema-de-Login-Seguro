@@ -1,0 +1,11 @@
+.git
+.env
+target
+combinado*.txt
+cookies.txt
+.classpath
+.project
+.settings
+.factorypath
+.backup-layout
+nbactions*.xml

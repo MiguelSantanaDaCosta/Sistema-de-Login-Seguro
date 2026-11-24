@@ -100,3 +100,16 @@ coverage/
 combinado.txt
 combinado1.txt
 
+
+# Saídas do concatena.sh
+combinado.*
+combinado_*
+combinado-*
+estrutura.txt
+estrutura_dirs.txt
+estrutura.json
+estrutura*.pdf
+estrutura*.png
+estrutura*.jpg
+estrutura*.zip
+estrutura*.xz

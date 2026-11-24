@@ -1,0 +1,26 @@
+# Uso na VM:  docker compose up -d --build
+# Banco: MongoDB Atlas (MONGO_URI e MONGO_URI_CHAMADOS no .env). Sem container de banco.
+services:
+  thindesk:
+    build: .
+    container_name: thindesk
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CHAMADOS_URL: http://ms-chamados:8081   # rede interna do compose
+    ports:
+      - "80:8000"       # HTTP público -> app
+    depends_on:
+      - ms-chamados
+
+  # Microserviço de chamados (outro repositório, clonado em ../ms-chamados).
+  ms-chamados:
+    build: ../ms-chamados
+    container_name: ms-chamados
+    restart: unless-stopped
+    environment:
+      MONGO_URI_CHAMADOS: ${MONGO_URI_CHAMADOS}
+      JWT_SECRET: ${JWT_SECRET}     # deve ser igual ao do thindesk
+      SERVER_PORT: 8081
+    expose:
+      - "8081"          # só acessível dentro da rede do compose
