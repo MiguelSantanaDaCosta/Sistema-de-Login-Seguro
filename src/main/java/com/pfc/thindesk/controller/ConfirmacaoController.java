@@ -9,7 +9,8 @@ package com.pfc.thindesk.controller;
 
 import java.time.Duration;
 import java.util.Optional;
-
+import java.util.List;
+import com.pfc.thindesk.entity.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +78,7 @@ public class ConfirmacaoController {
     // inválido, /login?erro.
     @GetMapping("/confirmar")
     public String confirmarLogin(@RequestParam(required = false) String token, HttpServletResponse response) {
-
+        
         Optional<String> dono = emailTokenService.consumir(token, TipoToken.LOGIN); // uso único
         if (dono.isEmpty()) {
             log.warn("Link de LOGIN recusado: token inexistente, vencido ou já usado "
@@ -90,9 +91,8 @@ public class ConfirmacaoController {
             log.warn("Link de LOGIN recusado: usuário '{}' não existe ou está inativo", dono.get());
             return "redirect:/login?erro=link-invalido";
         }
-
-        // Aqui, e só aqui, nasce o token FINAL (preAuth=false) em cookie HttpOnly
-        String finalToken = jwtUtil.gerarToken(usuario.get().getUsername(), false);
+        List<String> roles = usuario.get().getRoles().stream().map(Role::name).toList();
+        String finalToken = jwtUtil.gerarToken(usuario.get().getUsername(), false, roles);
         ResponseCookie auth = ResponseCookie.from(COOKIE_AUTH, finalToken)
                 .httpOnly(true)
                 .secure(false) // secure(true) em produção (HTTPS)

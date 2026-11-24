@@ -1,31 +1,57 @@
-<div th:fragment="content" class="container-fluid"
-     xmlns:th="http://www.thymeleaf.org">
+<div
+  th:fragment="content"
+  class="container-fluid"
+  xmlns:th="http://www.thymeleaf.org"
+>
   <h2 class="mb-4">
     Fila de Chamados — <span th:text="${usuarioAtual}"></span>
   </h2>
 
-  <table class="table table-striped">
+  <div
+    th:if="${sucesso}"
+    class="alert alert-success"
+    th:text="${sucesso}"
+  ></div>
+  <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+  <table class="table table-striped align-middle">
     <thead>
       <tr>
-        <th>Descrição</th><th>Status</th><th>Técnico</th>
-        <th>Usuário</th><th>Ações</th>
+        <th>Título</th>
+        <th>Descrição</th>
+        <th>Solicitante</th>
+        <th>Aberto em</th>
+        <th>Resolver</th>
       </tr>
     </thead>
     <tbody>
+      <tr th:if="${#lists.isEmpty(chamados)}">
+        <td colspan="5" class="text-center text-muted">
+          Nenhum chamado aberto.
+        </td>
+      </tr>
       <tr th:each="c : ${chamados}">
-        <td th:text="${c.descricao}"></td>
-        <td><span class="badge bg-secondary" th:text="${c.status}"></span></td>
-        <td th:text="${c.tecnico}"></td>
-        <td th:text="${c.usuario}"></td>
+        <td th:text="${c.titulo()}"></td>
+        <td th:text="${c.descricao()}"></td>
+        <td th:text="${c.solicitante()}"></td>
+        <td
+          th:text="${#temporals.format(c.abertura(), 'dd/MM/yyyy HH:mm')}"
+        ></td>
         <td>
-          <form th:action="@{'/tecnico/chamados/' + ${c.id} + '/assumir'}"
-                method="post" class="d-inline">
-            <button class="btn btn-sm btn-primary">Assumir</button>
-          </form>
-          <form th:action="@{'/tecnico/chamados/' + ${c.id} + '/status'}"
-                method="post" class="d-inline">
-            <input type="hidden" name="status" value="Concluído" />
-            <button class="btn btn-sm btn-success">Concluir</button>
+          <form
+            th:action="@{'/tecnico/chamados/' + ${c.id()} + '/resolver'}"
+            method="post"
+            class="d-flex gap-2"
+          >
+            <input
+              type="text"
+              name="solucao"
+              class="form-control form-control-sm"
+              placeholder="Solução aplicada"
+              maxlength="2000"
+              required
+            />
+            <button class="btn btn-sm btn-success">Resolver</button>
           </form>
         </td>
       </tr>

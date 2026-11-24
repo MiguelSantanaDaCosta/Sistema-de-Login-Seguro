@@ -1,0 +1,40 @@
+<div
+  th:fragment="content"
+  class="container-fluid"
+  xmlns:th="http://www.thymeleaf.org"
+>
+  <h2 class="mb-4">Novo chamado</h2>
+
+  <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+  <form th:action="@{/chamados/novo}" method="post" style="max-width: 640px">
+    <div class="mb-3">
+      <label for="titulo" class="form-label">Título</label>
+      <input
+        type="text"
+        id="titulo"
+        name="titulo"
+        class="form-control"
+        maxlength="120"
+        required
+        th:value="${titulo}"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="descricao" class="form-label">Descrição</label>
+      <textarea
+        id="descricao"
+        name="descricao"
+        class="form-control"
+        rows="5"
+        maxlength="2000"
+        required
+        th:text="${descricao}"
+      ></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Abrir chamado</button>
+    <a th:href="@{/chamados}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>

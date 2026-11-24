@@ -1,7 +1,7 @@
 package com.pfc.thindesk.controller;
 
-import com.pfc.thindesk.entity.Chamado;
-import com.pfc.thindesk.service.ChamadoService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
+import com.pfc.thindesk.client.ChamadoApiException;
+import com.pfc.thindesk.client.ChamadoClient;
 
 /**
  * Área do técnico. Exige ROLE_TECNICO ou ROLE_ADMIN.
- * Técnicos podem assumir chamados e movê-los entre estados.
+ * Lista os chamados abertos e registra a solução no ms-chamados.
  */
 @Controller
 @RequestMapping("/tecnico")
@@ -25,36 +27,31 @@ import java.util.List;
 public class TecnicoController {
 
     @Autowired
-    private ChamadoService chamadoService;
+    private ChamadoClient chamadoClient;
 
     @GetMapping("/chamados")
-    public String listarChamados(Model model, Authentication auth) {
-        List<Chamado> chamados = chamadoService.listarChamados();
-        model.addAttribute("chamados", chamados);
+    public String fila(Model model, Authentication auth) {
+        try {
+            model.addAttribute("chamados", chamadoClient.listarAbertos());
+        } catch (ChamadoApiException e) {
+            model.addAttribute("chamados", List.of());
+            model.addAttribute("erro", e.getMessage());
+        }
         model.addAttribute("usuarioAtual", auth.getName());
         model.addAttribute("content", "tecnico/chamados :: content");
         return "layout";
     }
 
-    @PostMapping("/chamados/{id}/assumir")
-    public String assumir(@PathVariable String id, Authentication auth) {
-        chamadoService.atualizarChamado(id, montarAtualizacao("Em Andamento", auth.getName()));
+    @PostMapping("/chamados/{id}/resolver")
+    public String resolver(@PathVariable String id,
+                           @RequestParam String solucao,
+                           RedirectAttributes redirect) {
+        try {
+            chamadoClient.resolver(id, solucao);
+            redirect.addFlashAttribute("sucesso", "Chamado resolvido.");
+        } catch (ChamadoApiException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+        }
         return "redirect:/tecnico/chamados";
-    }
-
-    @PostMapping("/chamados/{id}/status")
-    public String alterarStatus(@PathVariable String id,
-                                @RequestParam String status,
-                                Authentication auth) {
-        chamadoService.atualizarChamado(id, montarAtualizacao(status, auth.getName()));
-        return "redirect:/tecnico/chamados";
-    }
-
-    // TODO: ChamadoService.atualizarChamado hoje sobrescreve todos os campos; avaliar patch parcial.
-    private Chamado montarAtualizacao(String status, String tecnico) {
-        Chamado c = new Chamado();
-        c.setStatus(status);
-        c.setTecnico(tecnico);
-        return c;
     }
 }

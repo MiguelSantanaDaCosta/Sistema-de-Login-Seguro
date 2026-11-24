@@ -41,6 +41,18 @@ public class JwtUtil {
                 .compact();
     }
 
+    // Gera JWT com os papéis do usuário (claim "roles"); o ms-chamados lê essa claim
+    public String gerarToken(String username, boolean isPreAuth, java.util.List<String> roles) {
+        return Jwts.builder()
+                .subject(username)
+                .claim("preAuth", isPreAuth)
+                .claim("roles", roles)
+                .issuedAt(new Date())
+                .expiration(new Date(new Date().getTime() + expirationMs))
+                .signWith(getSigninKey())
+                .compact();
+    }
+
     // Extrai o username (subject) do token.
     public String extrairUsername(String token) {
         return Jwts.parser()
@@ -70,3 +82,4 @@ public class JwtUtil {
         }
     }
 }
+

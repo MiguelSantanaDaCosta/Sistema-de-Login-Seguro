@@ -1,32 +1,58 @@
-<div th:fragment="content" class="container-fluid"
-     xmlns:th="http://www.thymeleaf.org">
-  <h2 class="mb-4">Lista de Chamados</h2>
+<div
+  th:fragment="content"
+  class="container-fluid"
+  xmlns:th="http://www.thymeleaf.org"
+>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Meus Chamados</h2>
+    <a th:href="@{/chamados/novo}" class="btn btn-primary btn-sm"
+      >Novo chamado</a
+    >
+  </div>
+
+  <div
+    th:if="${sucesso}"
+    class="alert alert-success"
+    th:text="${sucesso}"
+  ></div>
+  <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
 
   <table class="table table-striped">
     <thead>
       <tr>
+        <th>Título</th>
         <th>Descrição</th>
         <th>Status</th>
-        <th>Tipo</th>
+        <th>Aberto em</th>
         <th>Técnico</th>
-        <th>Usuário</th>
-        <th>Ações</th>
+        <th>Solução</th>
+        <th>Resolvido em</th>
       </tr>
     </thead>
     <tbody>
-      <tr th:each="chamado : ${chamados}">
-        <td th:text="${chamado?.descricao}"></td>
-        <td th:text="${chamado?.status}"></td>
-        <td th:text="${chamado?.tipo}"></td>
-        <td th:text="${chamado?.tecnico}"></td>
-        <td th:text="${chamado?.usuario}"></td>
-        <td>
-          <a th:href="@{'/chamados/novo'}" class="btn btn-primary btn-sm">Novo</a>
-          <a th:href="@{'/chamados/atualizar/' + ${chamado.id}}"
-             class="btn btn-warning btn-sm">Editar</a>
-          <a th:href="@{'/chamados/cancelar/' + ${chamado.id}}"
-             class="btn btn-danger btn-sm">Cancelar</a>
+      <tr th:if="${#lists.isEmpty(chamados)}">
+        <td colspan="7" class="text-center text-muted">
+          Nenhum chamado encontrado.
         </td>
+      </tr>
+      <tr th:each="c : ${chamados}">
+        <td th:text="${c.titulo()}"></td>
+        <td th:text="${c.descricao()}"></td>
+        <td>
+          <span
+            class="badge"
+            th:classappend="${c.status() == 'RESOLVIDO'} ? 'bg-success' : 'bg-warning text-dark'"
+            th:text="${c.status()}"
+          ></span>
+        </td>
+        <td
+          th:text="${#temporals.format(c.abertura(), 'dd/MM/yyyy HH:mm')}"
+        ></td>
+        <td th:text="${c.tecnico()}"></td>
+        <td th:text="${c.solucao()}"></td>
+        <td
+          th:text="${#temporals.format(c.resolucao(), 'dd/MM/yyyy HH:mm')}"
+        ></td>
       </tr>
     </tbody>
   </table>
