@@ -240,6 +240,10 @@
         marcar(destino, "sq-certo");
         pararTimer();
         travado = true;
+        if (ok.loginDireto) { // conta demo2: o puzzle encerra o login (sem email)
+          window.location.href = ok.redirect || "/";
+          return;
+        }
         mostrarEmailEnviado(ok);
         return;
       }

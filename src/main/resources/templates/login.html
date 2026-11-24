@@ -45,6 +45,15 @@
         <img th:src="@{/images/logo.png}" alt="Logo" class="logo" />
         <h3 class="mb-4">Bem-vindo</h3>
 
+        <div th:if="${@demoProps.habilitado}" class="alert alert-info small">
+          <b>Conta de demonstração</b><br />
+          Usuário: <code th:text="${@demoProps.username}">demo</code><br />
+          Senha: <code th:text="${@demoProps.password}">demo1234</code>
+          <hr class="my-2" />
+          <b>Demo 2 (Admin, resolve o puzzle, sem email)</b><br />
+          Usuário: <code th:text="${@demoProps.username2}">demo2</code><br />
+          Senha: <code th:text="${@demoProps.password2}">demo2-1234</code>
+        </div>
         <form id="loginForm">
           <div class="form-group mb-3">
             <label for="username" class="form-label">Usuário</label>
@@ -165,6 +174,10 @@
             }
 
             e.target.password.value = ""; // não deixa a senha no campo
+            if (dados.demo) { // conta de demonstração: entra direto
+              window.location.href = dados.redirect || "/";
+              return;
+            }
             PuzzleModal.abrir(dados, {
               aoEncerrar: (mensagem) => {
                 err.textContent = mensagem || "";

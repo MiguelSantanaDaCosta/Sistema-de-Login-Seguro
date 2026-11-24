@@ -63,6 +63,8 @@ public class AuthController {
     private EmailTokenService emailTokenService;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private com.pfc.thindesk.service.DemoProps demoProps;
 
     @Value("${app.security.puzzle.max-tentativas:5}")
     private int maxTentativas;
@@ -87,6 +89,16 @@ public class AuthController {
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new BadCredentialsException("Credenciais inválidas"));
+
+        // Conta de demonstração pública: sem puzzle nem email, só com a senha (e só se habilitada)
+        if (demoProps.isHabilitado() && usuario.isContaDemo()) {
+            java.util.List<String> roles = usuario.getRoles().stream().map(com.pfc.thindesk.entity.Role::name).toList();
+            String token = jwtUtil.gerarToken(usuario.getUsername(), false, roles);
+            response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from("thindesk_auth", token)
+                    .httpOnly(true).secure(false).path("/").sameSite("Lax")
+                    .maxAge(Duration.ofMillis(expirationMs)).build().toString());
+            return ResponseEntity.ok(mapa("demo", true, "redirect", "/"));
+        }
 
         PuzzleXadrez puzzle = puzzleService.iniciarSessao(usuario);
 
@@ -139,6 +151,18 @@ public class AuthController {
 
         // --- Acertou: 3º fator, o link enviado por email ---
         if (!esperado.isEmpty() && lance.equals(esperado)) {
+            // Conta de demonstração "pula email": o puzzle é o último fator, o login termina aqui
+            if (demoProps.isHabilitado() && usuario.isPulaEmail()) {
+                java.util.List<String> roles = usuario.getRoles().stream().map(com.pfc.thindesk.entity.Role::name).toList();
+                String token = jwtUtil.gerarToken(usuario.getUsername(), false, roles);
+                puzzleService.limpar(usuario);
+                response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString());
+                response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from("thindesk_auth", token)
+                        .httpOnly(true).secure(false).path("/").sameSite("Lax")
+                        .maxAge(Duration.ofMillis(expirationMs)).build().toString());
+                return ResponseEntity.ok(mapa("mensagem", "Puzzle resolvido!", "loginDireto", true, "redirect", "/"));
+            }
+
             String email = usuario.getEmail();
             if (email == null || email.isBlank()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(mapa(

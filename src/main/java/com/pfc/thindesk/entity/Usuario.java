@@ -41,6 +41,18 @@ public class Usuario {
 
     private Set<Role> roles = new HashSet<>();
 
+    /**
+     * Conta de demonstração pública: entra só com senha (sem puzzle/email), apenas se app.demo.enabled.
+     * Não é atribuível por nenhuma tela; só o seed (ou o painel root) a define.
+     */
+    private boolean contaDemo = false;
+
+    /**
+     * Conta de demonstração que resolve o puzzle normalmente, mas NÃO recebe o link por email:
+     * o login termina ao acertar o puzzle. Só vale com app.demo.enabled; só o seed/painel root a define.
+     */
+    private boolean pulaEmail = false;
+
     // --- Estado do 2FA (o servidor é a fonte da verdade; o cliente não escolhe o puzzle) ---
     /** Erros no puzzle atual. */
     private int tentativasPuzzle = 0;

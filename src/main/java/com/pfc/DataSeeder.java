@@ -23,6 +23,8 @@ public class DataSeeder implements CommandLineRunner {
 
     @org.springframework.beans.factory.annotation.Value("${app.admin.email:admin@thindesk.local}")
     private String adminEmail;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.pfc.thindesk.service.DemoProps demoProps;
     @org.springframework.beans.factory.annotation.Value("${app.admin.password:admin123}")
     private String adminPassword;
 
@@ -43,6 +45,34 @@ public class DataSeeder implements CommandLineRunner {
             System.out.println(">>> Usuário admin criado.");
         } else {
             sincronizarEmailAdmin();
+        }
+
+        // Conta de demonstração pública (login só com senha). Perfil USUARIO: sem privilégios.
+        if (demoProps.isHabilitado() && usuarioRepository.findByUsername(demoProps.getUsername()).isEmpty()) {
+            Usuario demo = new Usuario();
+            demo.setUsername(demoProps.getUsername());
+            demo.setEmail("demo@thindesk.local");
+            demo.setPassword(passwordEncoder.encode(demoProps.getPassword()));
+            demo.setNomeCompleto("Conta de Demonstração");
+            demo.setAtivo(true);
+            demo.setContaDemo(true);
+            demo.setRoles(Set.of(Role.ROLE_USUARIO));
+            usuarioRepository.save(demo);
+            System.out.println(">>> Conta de demonstração criada.");
+        }
+
+        // Conta de demonstração 2: perfil ADMIN (puzzle de nível admin), mas sem email: o puzzle encerra o login.
+        if (demoProps.isHabilitado() && usuarioRepository.findByUsername(demoProps.getUsername2()).isEmpty()) {
+            Usuario demo2 = new Usuario();
+            demo2.setUsername(demoProps.getUsername2());
+            demo2.setEmail("demo2@thindesk.local");
+            demo2.setPassword(passwordEncoder.encode(demoProps.getPassword2()));
+            demo2.setNomeCompleto("Demonstração (Admin, sem email)");
+            demo2.setAtivo(true);
+            demo2.setPulaEmail(true);
+            demo2.setRoles(Set.of(Role.ROLE_ADMIN));
+            usuarioRepository.save(demo2);
+            System.out.println(">>> Conta de demonstração 2 criada.");
         }
 
         // Usuário técnico "root": conta que só é alcançada pelo desafio da rainha vermelha.
