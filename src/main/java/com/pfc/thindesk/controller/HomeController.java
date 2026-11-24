@@ -33,15 +33,6 @@ public class HomeController {
         return "puzzle";
     }
 
-    @GetMapping("/")
-    public ModelAndView home() {
-        ModelAndView modelAndView = new ModelAndView("layout");
-        String fragment = "home :: content";
-        log.info("Carregando fragmento: {}", fragment); // Log para depuração
-        modelAndView.addObject("content", fragment);
-        return modelAndView;
-    }
-
     @GetMapping("/clientes")
     public String clientes(Model model) {
         List<Cliente> clientes = clienteService.listarClientes();

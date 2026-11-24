@@ -1,0 +1,117 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">Dashboard</h2>
+      <small class="text-muted">Olá, <b th:text="${nome}">usuário</b> — resumo dos seus chamados técnicos</small>
+    </div>
+    <a th:href="@{/chamados/novo}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo chamado</a>
+  </div>
+
+  <div th:if="${erro}" class="alert alert-warning" th:text="${erro}"></div>
+
+  <!-- Cartões de indicadores -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Meus chamados</div>
+          <div class="display-6 fw-bold" th:text="${total}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Em aberto</div>
+          <div class="display-6 fw-bold text-warning" th:text="${abertos}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Resolvidos</div>
+          <div class="display-6 fw-bold text-success" th:text="${resolvidos}">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small" th:text="${tecnico} ? 'Fila da equipe (abertos)' : 'Taxa de resolução'">Taxa</div>
+          <div class="display-6 fw-bold" th:if="${tecnico}" th:text="${filaTotal}">0</div>
+          <div class="display-6 fw-bold" th:unless="${tecnico}" th:text="${percentualResolvidos} + '%'">0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de progresso resolvidos x abertos -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between mb-2">
+        <span class="fw-semibold">Andamento dos meus chamados</span>
+        <span class="text-muted small" th:text="${percentualResolvidos} + '% resolvidos'">0%</span>
+      </div>
+      <div class="progress" style="height: 22px">
+        <div class="progress-bar bg-success" role="progressbar"
+             th:style="'width:' + ${percentualResolvidos} + '%'"
+             th:text="${resolvidos} + ' resolvidos'"></div>
+        <div class="progress-bar bg-warning text-dark" role="progressbar"
+             th:style="'width:' + (${total} == 0 ? 0 : 100 - ${percentualResolvidos}) + '%'"
+             th:text="${abertos} + ' abertos'"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Últimos chamados -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent fw-semibold d-flex justify-content-between">
+          <span>Últimos chamados</span>
+          <a th:href="@{/chamados}" class="small">ver todos</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead><tr><th>Título</th><th>Status</th><th>Aberto em</th></tr></thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(recentes)}">
+                <td colspan="3" class="text-center text-muted py-3">Nenhum chamado ainda. Abra o primeiro!</td>
+              </tr>
+              <tr th:each="c : ${recentes}">
+                <td th:text="${c.titulo()}"></td>
+                <td>
+                  <span class="badge" th:classappend="${c.status() == 'RESOLVIDO'} ? 'bg-success' : 'bg-warning text-dark'"
+                        th:text="${c.status()}"></span>
+                </td>
+                <td th:text="${#temporals.format(c.abertura(), 'dd/MM/yyyy HH:mm')}"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila da equipe (TECNICO/ADMIN) ou atalhos (usuário) -->
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent fw-semibold" th:text="${tecnico} ? 'Fila técnica (mais antigos)' : 'Atalhos'">Atalhos</div>
+        <ul class="list-group list-group-flush" th:if="${tecnico}">
+          <li class="list-group-item text-muted" th:if="${#lists.isEmpty(fila)}">Nenhum chamado aguardando.</li>
+          <li class="list-group-item d-flex justify-content-between" th:each="c : ${fila}">
+            <span th:text="${c.titulo()}"></span>
+            <small class="text-muted" th:text="${c.solicitante()}"></small>
+          </li>
+          <li class="list-group-item"><a th:href="@{/tecnico/chamados}">Abrir fila técnica</a></li>
+        </ul>
+        <div class="list-group list-group-flush" th:unless="${tecnico}">
+          <a th:href="@{/chamados/novo}" class="list-group-item list-group-item-action"><i class="bi bi-plus-circle"></i> Abrir novo chamado</a>
+          <a th:href="@{/chamados}" class="list-group-item list-group-item-action"><i class="bi bi-list-check"></i> Acompanhar meus chamados</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
