@@ -27,27 +27,44 @@ public class PuzzleImporter implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(PuzzleImporter.class);
 
-    private static final String ARQUIVO_CSV = "puzzles_lichess.csv";
+    // base geral (todas as faixas) + elite (rating >= 3000, só para o desafio root)
+    private static final List<String> ARQUIVOS_CSV = List.of("puzzles_lichess.csv", "puzzles_lichess_elite.csv");
     private static final int TAMANHO_LOTE = 500;
 
     @Autowired
     private PuzzleXadrezRepository puzzleXadrezRepository;
+    @Autowired
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-    @Value("${app.security.puzzle.rating-max:1100}")
+    // Teto do import: precisa cobrir as faixas de todos os perfis e o desafio root
+    @Value("${app.security.puzzle.import-rating-max:4000}")
     private int ratingMax;
 
-    // Verifica se a coleção está vazia e importa em lotes de 500.
+    // Rating mínimo dos puzzles do desafio root: o import precisa trazer ao menos alguns
+    @Value("${app.root.rating-min:3000}")
+    private int ratingMinRoot;
+
+    // Importa os CSVs em lotes. Idempotente: só insere o que ainda não existe (por _id).
     @Override
     public void run(String... args) {
-        if (puzzleXadrezRepository.count() > 0) {
+        List<PuzzleXadrez> maisAltos = puzzleXadrezRepository.findTop50ByOrderByRatingDesc();
+        boolean temDificeis = !maisAltos.isEmpty() && maisAltos.get(0).getRating() != null
+                && maisAltos.get(0).getRating() >= 2000;
+        boolean temElite = puzzleXadrezRepository.countByRatingGreaterThanEqual(ratingMinRoot) >= 20;
+        if (temDificeis && temElite) {
             log.info("PuzzleImporter: coleção puzzles_xadrez já populada — nada a importar.");
             return;
         }
+        for (String arquivo : ARQUIVOS_CSV) {
+            importar(arquivo);
+        }
+    }
 
-        ClassPathResource recurso = new ClassPathResource(ARQUIVO_CSV);
+    private void importar(String arquivo) {
+        ClassPathResource recurso = new ClassPathResource(arquivo);
         if (!recurso.exists()) {
             log.warn("PuzzleImporter: {} não encontrado em src/main/resources. "
-                    + "O login 2FA não funcionará sem puzzles — veja o README.", ARQUIVO_CSV);
+                    + "O login 2FA não funcionará sem puzzles — veja o README.", arquivo);
             return;
         }
 
@@ -72,21 +89,21 @@ public class PuzzleImporter implements CommandLineRunner {
 
                 lote.add(puzzle);
                 if (lote.size() >= TAMANHO_LOTE) {
-                    puzzleXadrezRepository.saveAll(lote);
+                    gravar(lote);
                     importados += lote.size();
                     lote.clear();
                 }
             }
             if (!lote.isEmpty()) {
-                puzzleXadrezRepository.saveAll(lote);
+                gravar(lote);
                 importados += lote.size();
             }
         } catch (IOException e) {
-            throw new IllegalStateException("Falha ao ler " + ARQUIVO_CSV, e);
+            throw new IllegalStateException("Falha ao ler " + arquivo, e);
         }
 
-        log.info("PuzzleImporter: {} puzzles importados com rating <= {} ({} linhas lidas, {} descartadas).",
-                importados, ratingMax, lidas, lidas - importados);
+        log.info("PuzzleImporter: {} — {} puzzles válidos (rating <= {}), {} linhas lidas, {} descartadas.",
+                arquivo, importados, ratingMax, lidas, lidas - importados);
     }
 
     
@@ -144,5 +161,16 @@ public class PuzzleImporter implements CommandLineRunner {
         if (rating < 1400) return "facil";
         if (rating < 1900) return "media";
         return "dificil";
+    }
+
+    // Insere em lote só os que ainda não existem (uma ida ao banco por lote, não por documento)
+    private void gravar(List<PuzzleXadrez> lote) {
+        java.util.Set<String> existentes = new java.util.HashSet<>();
+        puzzleXadrezRepository.findAllById(lote.stream().map(PuzzleXadrez::getId).toList())
+                .forEach(p -> existentes.add(p.getId()));
+        List<PuzzleXadrez> novos = lote.stream().filter(p -> !existentes.contains(p.getId())).toList();
+        if (!novos.isEmpty()) {
+            mongoTemplate.insert(novos, PuzzleXadrez.class);
+        }
     }
 }

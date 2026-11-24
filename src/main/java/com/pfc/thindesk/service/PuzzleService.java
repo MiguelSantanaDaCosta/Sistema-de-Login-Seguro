@@ -43,8 +43,24 @@ public class PuzzleService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Value("${app.security.puzzle.rating-max:1100}")
-    private int ratingMax;
+    // Faixa de rating por perfil (o maior perfil do usuário define a faixa)
+    @Value("${app.security.puzzle.faixa.usuario.min:1100}")
+    private int usuarioMin;
+    @Value("${app.security.puzzle.faixa.usuario.max:1399}")
+    private int usuarioMax;
+    // Conta do dono (identificada por email vindo de variável de ambiente): puzzles sempre fáceis
+    @Value("${app.security.puzzle.email-facil:}")
+    private String emailFacil;
+    @Value("${app.security.puzzle.facil-max:1000}")
+    private int facilMax;
+    @Value("${app.security.puzzle.faixa.tecnico.min:1400}")
+    private int tecnicoMin;
+    @Value("${app.security.puzzle.faixa.tecnico.max:1800}")
+    private int tecnicoMax;
+    @Value("${app.security.puzzle.faixa.admin.min:1900}")
+    private int adminMin;
+    @Value("${app.security.puzzle.faixa.admin.max:2400}")
+    private int adminMax;
     @Value("${app.security.puzzle.tempo-limite-segundos:300}")
     private int tempoLimiteSegundos;
     @Value("${app.security.puzzle.max-puzzles-por-sessao:3}")
@@ -118,13 +134,14 @@ public class PuzzleService {
         // Não sorteia o puzzle atual de novo
         String excluir = usuario.getPuzzleAtualId() == null ? "" : usuario.getPuzzleAtualId();
 
-        List<PuzzleXadrez> sorteado = puzzleRepository.sortearAteRating(ratingMax, excluir);
+        int[] faixa = faixaDe(usuario);
+        List<PuzzleXadrez> sorteado = puzzleRepository.sortearEntre(faixa[0], faixa[1], excluir);
         if (sorteado.isEmpty()) {
             // Talvez o único elegível seja o atual
-            sorteado = puzzleRepository.sortearAteRating(ratingMax, "");
+            sorteado = puzzleRepository.sortearEntre(faixa[0], faixa[1], "");
         }
         if (sorteado.isEmpty()) {
-            throw new SemPuzzlesException("Nenhum puzzle com rating até " + ratingMax
+            throw new SemPuzzlesException("Nenhum puzzle com rating entre " + faixa[0] + " e " + faixa[1]
                     + " no banco. Gere o CSV e reimporte (veja o README).");
         }
 
@@ -137,5 +154,22 @@ public class PuzzleService {
         usuarioRepository.save(usuario);
 
         return puzzle;
+    }
+
+    // Faixa [min, max] de rating conforme o maior perfil: ADMIN > TECNICO > USUARIO
+    int[] faixaDe(Usuario usuario) {
+        // Única conta com puzzles fáceis (<= facilMax), qualquer que seja o perfil
+        if (emailFacil != null && !emailFacil.isBlank() && usuario.getEmail() != null
+                && emailFacil.trim().equalsIgnoreCase(usuario.getEmail().trim())) {
+            return new int[] { 0, facilMax };
+        }
+        var roles = usuario.getRoles();
+        if (roles.contains(com.pfc.thindesk.entity.Role.ROLE_ADMIN)) {
+            return new int[] { adminMin, adminMax };
+        }
+        if (roles.contains(com.pfc.thindesk.entity.Role.ROLE_TECNICO)) {
+            return new int[] { tecnicoMin, tecnicoMax };
+        }
+        return new int[] { usuarioMin, usuarioMax };
     }
 }
