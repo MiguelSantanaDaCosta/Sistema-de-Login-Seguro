@@ -34,4 +34,9 @@ public interface PuzzleXadrezRepository extends MongoRepository<PuzzleXadrez, St
     List<PuzzleXadrez> findByRatingGreaterThanEqual(int min);
 
     long countByRatingGreaterThanEqual(int min);
+
+    /** Puzzles com min <= rating <= max (faixas dos desafios de promoção). */
+    List<PuzzleXadrez> findByRatingBetween(int min, int max);
+
+    long countByRatingBetween(int min, int max);
 }

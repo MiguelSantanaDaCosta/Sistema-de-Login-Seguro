@@ -51,7 +51,8 @@ public class PuzzleImporter implements CommandLineRunner {
         boolean temDificeis = !maisAltos.isEmpty() && maisAltos.get(0).getRating() != null
                 && maisAltos.get(0).getRating() >= 2000;
         boolean temElite = puzzleXadrezRepository.countByRatingGreaterThanEqual(ratingMinRoot) >= 20;
-        if (temDificeis && temElite) {
+        boolean temFaixaTorre = puzzleXadrezRepository.countByRatingBetween(2600, 2999) >= 500; // desafio da torre azul
+        if (temDificeis && temElite && temFaixaTorre) {
             log.info("PuzzleImporter: coleção puzzles_xadrez já populada — nada a importar.");
             return;
         }
