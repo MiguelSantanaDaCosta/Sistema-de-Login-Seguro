@@ -61,6 +61,8 @@ A versão é declarada no `pom.xml`, aparece na barra lateral da aplicação (`T
 - Thindesk: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases
 - Microserviço: https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos-/releases
 
+As notas de cada versão estão em `docs/releases/` e o passo a passo de publicação em `docs/RELEASES.md`.
+
 | Versão | Descrição |
 | ------ | --------- |
 | `1.0.0-alpha` | Login seguro (JWT + BCrypt), perfis e cadastro com confirmação por email |
