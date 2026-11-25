@@ -4,107 +4,104 @@ import com.pfc.thindesk.entity.Role;
 import com.pfc.thindesk.entity.Usuario;
 import com.pfc.thindesk.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
- * Seed inicial: cria o usuário administrador padrão se ele não existir.
+ * Seed inicial: garante o administrador (usuário/senha/email vindos do ambiente) e o usuário técnico "root".
+ * Contas de demonstração NÃO são criadas aqui: um ADMIN as gerencia em /admin/demos.
  * Os puzzles de xadrez são carregados pelo PuzzleImporter.
  */
-// Seed inicial: cria o usuário admin padrão se não existir.
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
-    @org.springframework.beans.factory.annotation.Value("${app.admin.email:admin@thindesk.local}")
-    private String adminEmail;
-    @org.springframework.beans.factory.annotation.Autowired
-    private com.pfc.thindesk.service.DemoProps demoProps;
-    @org.springframework.beans.factory.annotation.Value("${app.admin.password:admin123}")
-    private String adminPassword;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Value("${app.admin.username:admin}")
+    private String adminUsername;
+    @Value("${app.admin.email:admin@thindesk.local}")
+    private String adminEmail;
+    @Value("${app.admin.password:admin123}")
+    private String adminPassword;
+
     @Override
     public void run(String... args) {
-        if (usuarioRepository.findByUsername("admin").isEmpty()) {
-            Usuario admin = new Usuario();
-            admin.setUsername("admin");
-            admin.setEmail(adminEmail);
-            admin.setPassword(passwordEncoder.encode(adminPassword));
-            admin.setNomeCompleto("Administrador");
-            admin.setAtivo(true);
-            admin.setRoles(Set.of(Role.ROLE_ADMIN));
-            usuarioRepository.save(admin);
-            System.out.println(">>> Usuário admin criado.");
-        } else {
-            sincronizarEmailAdmin();
+        garantirAdmin();
+        garantirRoot();
+    }
+
+    private void garantirAdmin() {
+        Optional<Usuario> atual = usuarioRepository.findByUsername(adminUsername);
+        if (atual.isPresent()) {
+            sincronizarEmailAdmin(atual.get());
+            return;
         }
 
-        // Conta de demonstração pública (login só com senha). Perfil USUARIO: sem privilégios.
-        if (demoProps.isHabilitado() && usuarioRepository.findByUsername(demoProps.getUsername()).isEmpty()) {
-            Usuario demo = new Usuario();
-            demo.setUsername(demoProps.getUsername());
-            demo.setEmail("demo@thindesk.local");
-            demo.setPassword(passwordEncoder.encode(demoProps.getPassword()));
-            demo.setNomeCompleto("Conta de Demonstração");
-            demo.setAtivo(true);
-            demo.setContaDemo(true);
-            demo.setRoles(Set.of(Role.ROLE_USUARIO));
-            usuarioRepository.save(demo);
-            System.out.println(">>> Conta de demonstração criada.");
+        // ADMIN_USERNAME mudou: promove o admin padrão antigo ("admin"), em vez de deixar a senha padrão no ar
+        Optional<Usuario> legado = "admin".equals(adminUsername) ? Optional.empty()
+                : usuarioRepository.findByUsername("admin")
+                        .filter(u -> u.getRoles().contains(Role.ROLE_ADMIN) && !u.isContaDemo() && !u.isPulaEmail());
+        if (legado.isPresent()) {
+            Usuario u = legado.get();
+            u.setUsername(adminUsername);
+            u.setPassword(passwordEncoder.encode(adminPassword));
+            if (adminEmail != null && !adminEmail.isBlank() && !adminEmail.endsWith("@thindesk.local")) {
+                u.setEmail(adminEmail);
+            }
+            usuarioRepository.save(u);
+            System.out.println(">>> Admin padrão renomeado para '" + adminUsername + "' e senha redefinida pelo ambiente.");
+            return;
         }
 
-        // Conta de demonstração 2: perfil ADMIN (puzzle de nível admin), mas sem email: o puzzle encerra o login.
-        if (demoProps.isHabilitado() && usuarioRepository.findByUsername(demoProps.getUsername2()).isEmpty()) {
-            Usuario demo2 = new Usuario();
-            demo2.setUsername(demoProps.getUsername2());
-            demo2.setEmail("demo2@thindesk.local");
-            demo2.setPassword(passwordEncoder.encode(demoProps.getPassword2()));
-            demo2.setNomeCompleto("Demonstração (Admin, sem email)");
-            demo2.setAtivo(true);
-            demo2.setPulaEmail(true);
-            demo2.setRoles(Set.of(Role.ROLE_ADMIN));
-            usuarioRepository.save(demo2);
-            System.out.println(">>> Conta de demonstração 2 criada.");
-        }
+        Usuario admin = new Usuario();
+        admin.setUsername(adminUsername);
+        admin.setEmail(adminEmail);
+        admin.setPassword(passwordEncoder.encode(adminPassword));
+        admin.setNomeCompleto("Administrador");
+        admin.setAtivo(true);
+        admin.setRoles(Set.of(Role.ROLE_ADMIN));
+        usuarioRepository.save(admin);
+        System.out.println(">>> Usuário admin '" + adminUsername + "' criado.");
+    }
 
-        // Usuário técnico "root": conta que só é alcançada pelo desafio da rainha vermelha.
-        // Senha aleatória e descartada => não existe login por senha para ele.
+    // Se o admin ainda tem o email-placeholder (@thindesk.local) e ADMIN_EMAIL é um email real, atualiza.
+    private void sincronizarEmailAdmin(Usuario admin) {
+        if (adminEmail == null || adminEmail.isBlank() || adminEmail.endsWith("@thindesk.local")) {
+            return;
+        }
+        String atual = admin.getEmail();
+        if (atual != null && atual.endsWith("@thindesk.local") && !atual.equalsIgnoreCase(adminEmail)) {
+            try {
+                admin.setEmail(adminEmail);
+                usuarioRepository.save(admin);
+                System.out.println(">>> Email do admin atualizado a partir de ADMIN_EMAIL.");
+            } catch (RuntimeException e) {
+                System.out.println(">>> Não foi possível atualizar o email do admin: " + e.getMessage());
+            }
+        }
+    }
+
+    // Usuário técnico "root": conta que só é alcançada pelo desafio da rainha vermelha.
+    // Senha aleatória e descartada => não existe login por senha para ele.
+    private void garantirRoot() {
         if (usuarioRepository.findByUsername("root").isEmpty()) {
             Usuario root = new Usuario();
             root.setUsername("root");
             root.setEmail("root@thindesk.local");
-            root.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            root.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             root.setNomeCompleto("Root (rainha vermelha)");
             root.setAtivo(true);
             root.setRoles(Set.of(Role.ROLE_ROOT, Role.ROLE_ADMIN, Role.ROLE_TECNICO, Role.ROLE_USUARIO));
             usuarioRepository.save(root);
         }
-    }
-
-    // Se o admin ainda tem o email-placeholder (@thindesk.local) e ADMIN_EMAIL é um email real, atualiza.
-    private void sincronizarEmailAdmin() {
-        if (adminEmail == null || adminEmail.isBlank() || adminEmail.endsWith("@thindesk.local")) {
-            return;
-        }
-        usuarioRepository.findByUsername("admin").ifPresent(admin -> {
-            String atual = admin.getEmail();
-            if (atual != null && atual.endsWith("@thindesk.local") && !atual.equalsIgnoreCase(adminEmail)) {
-                try {
-                    admin.setEmail(adminEmail);
-                    usuarioRepository.save(admin);
-                    System.out.println(">>> Email do admin atualizado a partir de ADMIN_EMAIL.");
-                } catch (RuntimeException e) {
-                    System.out.println(">>> Não foi possível atualizar o email do admin: " + e.getMessage());
-                }
-            }
-        });
     }
 }

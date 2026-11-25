@@ -64,6 +64,16 @@
               <span class="d-none d-md-inline">Usuários</span>
             </a>
           </li>
+          <li
+            class="nav-item"
+            sec:authorize="hasRole('ADMIN')"
+            xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+          >
+            <a class="nav-link" th:href="@{/admin/demos}">
+              <i class="bi bi-person-badge"></i>
+              <span class="d-none d-md-inline">Contas demo</span>
+            </a>
+          </li>
 
           <li class="nav-item">
             <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">

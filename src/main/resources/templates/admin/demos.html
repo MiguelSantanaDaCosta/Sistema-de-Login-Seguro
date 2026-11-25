@@ -1,0 +1,70 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org">
+  <h2 class="mb-1">Contas de demonstração</h2>
+  <p class="text-muted">
+    Contas públicas para avaliação, criadas e removidas aqui (nada fixo no código). Divulgue o usuário e a senha na documentação.
+  </p>
+
+  <div th:if="${!demoHabilitado}" class="alert alert-warning">
+    O recurso está <b>desligado</b> (<code>DEMO_ENABLED=false</code>): as contas existem, mas exigem o login completo.
+  </div>
+  <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
+  <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
+
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">Nova conta demo</div>
+    <div class="card-body">
+      <form th:action="@{/admin/demos}" method="post" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Usuário</label>
+          <input name="username" class="form-control" placeholder="demo-tecnico" required />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Senha</label>
+          <input name="password" class="form-control" minlength="6" required />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Perfil</label>
+          <select name="role" class="form-select">
+            <option th:each="p : ${perfis}" th:value="${p.name()}" th:text="${p.name()}"></option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Como entra</label>
+          <select name="modo" class="form-select">
+            <option value="SENHA">Somente usuário e senha</option>
+            <option value="PUZZLE">Senha + puzzle do perfil (sem email)</option>
+          </select>
+        </div>
+        <div class="col-md-2"><button class="btn btn-primary w-100">Criar</button></div>
+      </form>
+      <div class="form-text mt-2">
+        Perfis ADMIN e TECNICO dão poderes reais a quem souber a senha. O perfil ROOT não é permitido (só se obtém pelo desafio).
+      </div>
+    </div>
+  </div>
+
+  <table class="table table-striped align-middle">
+    <thead><tr><th>Usuário</th><th>Perfil</th><th>Como entra</th><th>Ativo</th><th>Redefinir senha</th><th></th></tr></thead>
+    <tbody>
+      <tr th:if="${#lists.isEmpty(demos)}"><td colspan="6" class="text-center text-muted">Nenhuma conta demo.</td></tr>
+      <tr th:each="u : ${demos}">
+        <td th:text="${u.username}"></td>
+        <td><span class="badge bg-secondary" th:each="r : ${u.roles}" th:text="${r.name()}"></span></td>
+        <td th:text="${u.contaDemo} ? 'Somente senha' : 'Senha + puzzle (sem email)'"></td>
+        <td th:text="${u.ativo} ? 'Sim' : 'Não'"></td>
+        <td>
+          <form th:action="@{'/admin/demos/' + ${u.id} + '/senha'}" method="post" class="d-flex gap-1">
+            <input name="password" class="form-control form-control-sm" minlength="6" placeholder="nova senha" required />
+            <button class="btn btn-sm btn-outline-primary">Salvar</button>
+          </form>
+        </td>
+        <td>
+          <form th:action="@{'/admin/demos/' + ${u.id} + '/excluir'}" method="post"
+                onsubmit="return confirm('Remover esta conta demo?')">
+            <button class="btn btn-sm btn-outline-danger">Remover</button>
+          </form>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
