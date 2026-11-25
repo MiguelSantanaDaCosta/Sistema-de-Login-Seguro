@@ -20,10 +20,13 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 10. [Decisões de Design](#decisões-de-design)
 11. [Como adaptar a base a outro tema](#como-adaptar-a-base-a-outro-tema)
 12. [Testes](#testes)
-13. [tema de xadrez](#apêndice-a--base-genérica-vs-tema-de-xadrez)
-14. [Diagrama do fluxo de login](#apêndice-b--diagrama-do-fluxo-de-login)
-15. [Versionamento](#️-versionamento) · [Dashboard](#️-dashboard) · [Deploy e acesso](#-deploy-e-acesso)
-16. [Licença](#licença)
+13. [Tema de xadrez](#tema-de-xadrez)
+14. [Diagrama do fluxo de login](#diagrama-do-fluxo-de-login)
+15. [Perfis, hierarquia e desafios](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)
+16. [Versionamento e releases](#️-versionamento)
+17. [Dashboard](#️-dashboard)
+18. [Deploy e acesso](#-deploy-e-acesso)
+19. [Licença](#licença)
 
 ---
 
@@ -130,6 +133,12 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 ```
 [POST /api/auth/logout] → limpa os dois cookies (thindesk_auth e thindesk_pre)
 ```
+
+### Variações do login e evolução de perfil
+
+- **Todo cadastro começa como `USUARIO`.** O perfil evolui pelos **desafios de promoção** (cavalo verde → `TECNICO`, torre azul → `ADMIN`) ou por um administrador em `/admin/usuarios`.
+- **Contas demo** (criadas por um ADMIN em `/admin/demos`, com `DEMO_ENABLED=true`): entram só com senha, ou com senha + puzzle do perfil **sem** o link por email.
+- **Desafios** (cavalo, torre e rainha): puzzles seguidos em 5 minutos, estado no servidor e proteção anti-bot (detalhes em [Perfis, hierarquia e desafios](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)).
 
 ---
 
@@ -289,7 +298,8 @@ LANG=C.UTF-8 ./mvnw spring-boot:run
 Na primeira execução, o `PuzzleImporter` popula a coleção `puzzles_xadrez` **pela rede** (leva alguns segundos). Depois disso, no log:
 
 ```
-PuzzleImporter: N puzzles importados com rating <= 1100 (M linhas lidas, ...)
+PuzzleImporter: puzzles_lichess.csv — N puzzles válidos (rating <= 4000), M linhas lidas, K descartadas.
+PuzzleImporter: puzzles_lichess_elite.csv — N puzzles válidos (rating <= 4000), ...
 Started ThindeskApplication in X.XXX seconds
 ```
 
@@ -327,20 +337,10 @@ db.usuarios.getIndexes()      // _id_, username_1 (unique), email_1 (unique)
 db.email_tokens.getIndexes()  // _id_, tokenHash_1 (unique), expiraEm_1 (TTL)
 ```
 
-**Usuário seed** (criado automaticamente na 1ª execução): `admin` / `admin123`
-(alteração obrigatória em produção).
-
----
-
-## ☁️ MongoDB Atlas
-
-1. Crie uma conta gratuita em https://cloud.mongodb.com
-2. Crie um cluster **M0 (free)** e um database user (senha forte).
-3. Em **Network Access** libere o IP (dev: `0.0.0.0/0`; produção: IP fixo).
-4. Em **Database → Connect → Drivers**, copie a URI `mongodb+srv://...` para `MONGO_URI` no `.env`.
-5. `spring.data.mongodb.auto-index-creation=true` já cria:
-   - índices únicos em `usuarios.username` e `usuarios.email`
-   - **índice TTL** em `email_tokens.expiraEm` (o MongoDB apaga sozinho)
+**Administrador** (criado/garantido na subida a partir do `.env`): `ADMIN_USERNAME` (padrão `admin`), `ADMIN_PASSWORD` e
+`ADMIN_EMAIL`. **Defina uma senha própria** em `ADMIN_PASSWORD`: o padrão `admin123` existe só para desenvolvimento local. Se
+`ADMIN_USERNAME` mudar, o admin padrão antigo é promovido (renomeado e com a senha redefinida) em vez de ficar no ar com a senha padrão.
+O usuário técnico `root` também é criado, sem senha utilizável (só se acessa pelo desafio da rainha vermelha).
 
 ---
 
@@ -621,47 +621,49 @@ db.theme_config.deleteMany({ username: "maria" })
 
 ```
 src/main/java/com/pfc/
-├── ThindeskApplication.java              ← @SpringBootApplication
-├── SecurityConfig.java                   ← regras de URL + BCrypt + JwtAuthFilter
-├── DataSeeder.java                       ← cria admin se não existir
-├── MongoInitConfig.java                  ← cria coleções se não existirem
-├── config/
-│   └── GlobalModelAdvice.java            ← injeta temaAtivo/username em TODA view
-├── controller/
-│   ├── HomeController.java               ← páginas públicas e login
-│   ├── AuthController.java               ← POST /api/auth/login|logout
-│   ├── RegistroController.java           ← POST /api/auth/registrar
-│   ├── ConfirmacaoController.java        ← GET /auth/confirmar[-registro]
-│   ├── AdminController.java              ← @PreAuthorize("hasRole('ADMIN')")
-│   ├── TecnicoController.java            ← @PreAuthorize("hasAnyRole('TECNICO','ADMIN')")
-│   └── ThemeController.java              ← POST /tema
-├── dto/
-│   └── RegistroRequest.java              ← Bean Validation
-├── entity/
-│   ├── Usuario.java     Role.java        ← 3+ perfis
-│   ├── EmailToken.java  TipoToken.java
-│   └── ThemeConfig.java
-├── exception/
-│   └── ConflitoCadastroException.java
-├── repository/  (UsuarioRepository, EmailTokenRepository, ThemeConfigRepository, ...)
-├── security/
-│   ├── JwtUtil.java                      ← gera/valida JWT
-│   └── JwtAuthFilter.java                ← OncePerRequestFilter
-├── service/
-│   ├── UsuarioService.java               ← UserDetailsService + registrar/confirmar
-│   ├── EmailService.java
-│   ├── EmailTokenService.java            ← gera/consome tokens de email (SHA-256)
-│   └── ThemeService.java
+├── ThindeskApplication.java
+├── SecurityConfig.java                  ← regras de URL por perfil, BCrypt, filtros
+├── DataSeeder.java                      ← admin (vem do ambiente) e usuário "root"
+├── PuzzleImporter.java                  ← importa os CSVs do Lichess (em lote, idempotente)
+├── MongoInitConfig.java
+├── config/GlobalModelAdvice.java        ← injeta temaAtivo/username em TODA view
+└── thindesk/
+    ├── controller/
+    │   ├── HomeController · AuthController (login em 3 fatores) · RegistroController · ConfirmacaoController
+    │   ├── DashboardController          ← "/" (indicadores, fila e análise do Lichess)
+    │   ├── MeusChamadosController       ← /chamados (abrir e acompanhar)
+    │   ├── TecnicoController            ← /tecnico/** (fila e resolução)
+    │   ├── AdminController              ← /admin/** (usuários e contas demo)
+    │   ├── ThemeController · ClienteController · HorarioAtendimentoController
+    │   └── ChamadoController            ← API local legada do projeto base (os chamados reais ficam no ms-chamados)
+    ├── root/
+    │   ├── TipoDesafio · RootProps      ← os 3 desafios e suas configurações
+    │   ├── RootDesafioService           ← lógica dos desafios (puzzles seguidos, prazo, estado no servidor)
+    │   ├── RootDesafioController        ← rainha vermelha (anônimo)
+    │   ├── PromocaoController           ← cavalo verde e torre azul (logado)
+    │   └── RootController               ← painel /root (banco de dados)
+    ├── security/
+    │   ├── JwtUtil · JwtAuthFilter
+    │   └── bot/                         ← BotGuard, BotBlockFilter, IpBloqueado (anti-bot, IP bloqueado por 1h)
+    ├── client/                          ← ChamadoClient (REST + JWT com papéis) para o ms-chamados
+    ├── analise/PuzzleAnaliseService     ← cruzamento dos puzzles com partidas do Lichess
+    ├── service/                         ← UsuarioService · PuzzleService · EmailService · EmailTokenService · ThemeService · DemoProps
+    ├── entity/                          ← Usuario · Role (hierarquia) · PuzzleXadrez · PuzzleAnalise · RootDesafio · EmailToken · ThemeConfig
+    ├── repository/ · dto/RegistroRequest · exception/
+    └── util/                            ← FenUtil · NomeUsuario (regra do nome de usuário)
 
 src/main/resources/
-├── application.properties                ← parametrizado por ${ENV_VAR}
-├── static/css/  static/js/               ← assets
-├── templates/
-│   ├── layout.html          ← layout base (inclui a sidebar)
-│   ├── login.html  registrar.html
-│   ├── home.html
-│   ├── fragments/sidebar.html
-│   └── admin/usuarios.html  tecnico/chamados.html
+├── application.properties               ← parametrizado por ${ENV_VAR}
+├── puzzles_lichess.csv · puzzles_lichess_elite.csv
+├── static/ (css, js: puzzle-modal.js, root-desafio.js)
+└── templates/  layout · login · registrar · dashboard
+    ├── chamados/ (novo) · chamados.html · tecnico/chamados.html
+    ├── admin/ (usuarios, demos) · root/desafio.html
+    └── fragments/ (sidebar, rainha)
+
+src/test/java/com/pfc/thindesk/util/NomeUsuarioTest.java
+
+Raiz: Dockerfile · docker-compose.yml · Caddyfile · CHANGELOG.md · docs/ (ENTREGA.md, RELEASES.md, releases/, img/)
 ```
 
 ---
@@ -682,6 +684,12 @@ src/main/resources/
 | 10  | `.env` + `application.properties` parametrizado     | Nenhum secret hardcoded; trocar de ambiente não muda o código.     |
 | 11  | Pacote `security/` isolado                          | Trocar JWT por session-based = mudar 2 arquivos.                   |
 | 12  | Thymeleaf com `th:replace` de fragments             | Layout reutilizável, tema desacoplado.                             |
+| 13  | Hierarquia única de papéis (`Role.efetivos()`)       | Thindesk e ms-chamados aplicam a mesma regra `ROOT › ADMIN › TECNICO › USUARIO`. |
+| 14  | Estado dos desafios só no servidor                  | O lance correto nunca vai ao navegador; um erro reinicia a tentativa. |
+| 15  | Anti-bot por heurísticas + bloqueio de IP por 1h    | Barra automação óbvia; IP lido da conexão (ou de proxy interno confiável). |
+| 16  | Contas demo criadas por um ADMIN, não no código     | Nenhuma credencial fixa no repositório; ROOT nunca pode ser demo.   |
+| 17  | Nome de usuário só com letras **latinas** acentuadas | Evita nomes visualmente idênticos aos de outras pessoas (homógrafos). |
+| 18  | Chamados em microserviço próprio, validando o mesmo JWT | Domínio separado da autenticação; identidade e papéis viajam no token. |
 
 ---
 
@@ -702,7 +710,13 @@ A base **não sabe** o que é xadrez, chamado, cliente, etc. Para plugar outro d
 
 ## 🧪 Testes
 
-O `pom.xml` já traz `spring-boot-starter-test` e `spring-security-test`. Recomendado cobrir:
+O `pom.xml` já traz `spring-boot-starter-test` e `spring-security-test`. Já existe o teste unitário `NomeUsuarioTest` (regra do nome de usuário: acentos, espaços, homógrafos e caracteres proibidos):
+
+```bash
+./mvnw test -Dtest=NomeUsuarioTest
+```
+
+Recomendado cobrir também:
 
 - `POST /api/auth/registrar` com username duplicado → **409**
 - `POST /api/auth/login` com senha errada → **401**
@@ -769,7 +783,7 @@ O xadrez aqui **não é decoração**: ele é o **segundo fator de autenticaçã
 1) POST /api/auth/login   (usuário + senha)
    ├─ AuthenticationManager valida senha (BCrypt)
    ├─ PuzzleService.iniciarSessao(usuario):
-   │     • sorteia puzzle com rating ≤ PUZZLE_RATING_MAX
+   │     • sorteia puzzle na faixa de rating do perfil do usuário (ver "Perfis")
    │     • grava no documento do usuário:
    │         puzzleAtualId, puzzleExpiraEm, tentativasPuzzle=0,
    │         puzzlesNaSessao=1
@@ -818,14 +832,17 @@ O xadrez aqui **não é decoração**: ele é o **segundo fator de autenticaçã
 
 #### Tuning por variável de ambiente
 
-| Variável                             | Default | Efeito                                        |
-| ------------------------------------ | :-----: | --------------------------------------------- |
-| `PUZZLE_RATING_MAX`                  |  1100   | Dificuldade máxima (também filtro do import). |
-| `PUZZLE_TEMPO_LIMITE`                |   300   | Segundos por puzzle.                          |
-| `PUZZLE_MAX_POR_SESSAO`              |    3    | Trocas permitidas antes de exigir nova senha. |
-| `app.security.puzzle.max-tentativas` |    5    | Erros por puzzle antes de rotacionar.         |
+| Variável                             | Default | Efeito                                                       |
+| ------------------------------------ | :-----: | ------------------------------------------------------------ |
+| `PUZZLE_USUARIO_MIN` / `_MAX`        | 1100 / 1399 | Faixa de rating do perfil `USUARIO`.                     |
+| `PUZZLE_TECNICO_MIN` / `_MAX`        | 1400 / 1800 | Faixa do perfil `TECNICO`.                               |
+| `PUZZLE_ADMIN_MIN` / `_MAX`          | 1900 / 2400 | Faixa do perfil `ADMIN`.                                 |
+| `PUZZLE_EMAIL_FACIL` / `PUZZLE_FACIL_MAX` | — / 1000 | Conta (por email) que sempre recebe puzzles fáceis.   |
+| `PUZZLE_TEMPO_LIMITE`                |   300   | Segundos por puzzle.                                         |
+| `PUZZLE_MAX_POR_SESSAO`              |    3    | Trocas permitidas antes de exigir nova senha.                |
+| `app.security.puzzle.max-tentativas` |    5    | Erros por puzzle antes de rotacionar.                        |
 
-> **Dica para demo:** baixe `PUZZLE_RATING_MAX` para 800 se quiser puzzles bem fáceis na apresentação.
+> **Dica para demo:** use a conta definida em `PUZZLE_EMAIL_FACIL` (puzzles até 1000) ou uma conta demo (ver "Deploy e acesso") para apresentar sem puzzles difíceis.
 
 ---
 
@@ -846,27 +863,27 @@ Os puzzles vêm do **banco público de puzzles do Lichess**:
 | `PuzzleId` | vira `_id` no Mongo (evita duplicatas em reimportações)               |
 | `FEN`      | posição **antes** do lance do adversário                              |
 | `Moves`    | lista UCI; `Moves[0]` = lance do adversário, `Moves[1]` = **solução** |
-| `Rating`   | dificuldade (filtrada por `PUZZLE_RATING_MAX`)                        |
+| `Rating`   | dificuldade (define a faixa de cada perfil e dos desafios)             |
 | `Themes`   | tags (`mateIn2`, `fork`, `endgame`…) → vão para `descricao`           |
 | _(demais)_ | ignoradas                                                             |
 
 #### Pipeline de importação (`PuzzleImporter`)
 
 ```
-puzzles_lichess.csv (em src/main/resources)
+puzzles_lichess.csv (5 mil, 400–3100) + puzzles_lichess_elite.csv (~3,4 mil, 2600+)  — em src/main/resources
         │
-        ▼  (na 1ª subida da app, se a coleção estiver vazia)
+        ▼  (na subida da app; idempotente: só insere o que ainda não existe, em lote)
 PuzzleImporter.converter(linha):
-   1. parse do rating; descarta se > PUZZLE_RATING_MAX
+   1. parse do rating; descarta se > app.security.puzzle.import-rating-max (4000)
    2. Move[0] = lance do adversário
    3. FenUtil.aplicarLance(FEN, Move[0])
         → gera o FEN que o USUÁRIO realmente vê
    4. lanceCorreto = Move[1]
    5. dificuldade = fácil/média/difícil (por rating)
-   6. descricao = "Brancas jogam · rating 1100 · mateIn2, fork"
+   6. descricao = "Brancas jogam · rating 1750 · mateIn2, fork"
         │
         ▼  (lotes de 500)
-puzzleRepository.saveAll(lote)
+inserção em lote (MongoTemplate.insert) dos que ainda não existem
         │
         ▼
 Coleção `puzzles_xadrez` no MongoDB Atlas
@@ -880,15 +897,15 @@ Sorteio via **aggregation pipeline** do Mongo:
 
 ```java
 @Aggregation(pipeline = {
-  "{ $match: { rating: { $lte: ?0 }, _id: { $ne: ?1 } } }",
+  "{ $match: { rating: { $gte: ?0, $lte: ?1 }, _id: { $ne: ?2 } } }",
   "{ $sample: { size: 1 } }"
 })
-List<PuzzleXadrez> sortearAteRating(int ratingMax, String excluirId);
+List<PuzzleXadrez> sortearEntre(int min, int max, String excluirId);
 ```
 
-- `$match` filtra por rating e exclui o puzzle atual (para não repetir).
+- `$match` filtra pela faixa de rating do perfil e exclui o puzzle atual (para não repetir).
 - `$sample` sorteia 1 documento em **O(1)** médio — não precisa carregar tudo em memória.
-- Se `sortearAteRating` voltar vazio, o service tenta de novo **sem** o `$ne` (garante que sempre há puzzle, desde que a coleção não esteja vazia).
+- Se `sortearEntre` voltar vazio, o service tenta de novo **sem** o `$ne` (garante que sempre há puzzle, desde que a coleção não esteja vazia).
 
 #### Por que esse dataset é adequado
 
@@ -896,27 +913,31 @@ List<PuzzleXadrez> sortearAteRating(int ratingMax, String excluirId);
 | ------------------------ | --------------------------------------------------------------------------------------- |
 | **Domínio público**      | Sem restrições de licença.                                                              |
 | **Volume**               | 4M+ puzzles — impossível "decorar" a resposta.                                          |
-| **Rating calibrado**     | Você controla a dificuldade pelo `PUZZLE_RATING_MAX`.                                   |
+| **Rating calibrado**     | A dificuldade é controlada por faixa de rating (por perfil e por desafio).              |
 | **Temas**                | `mateIn1`, `fork`, `pin`, `endgame`… cada puzzle já vem com metadados.                  |
 | **Determinismo offline** | Depois de importado, o Atlas responde sem depender do Lichess.                          |
 | **Fácil de explicar**    | "Peguei um dataset público, filtrei por rating, apliquei o primeiro lance com FenUtil." |
 
 #### Como regenerar/atualizar o CSV
 
-O arquivo `puzzles_lichess.csv` está versionado apenas por conveniência didática. Para regenerá-lo:
+Os arquivos `puzzles_lichess.csv` (amostra de 5 mil puzzles, 400–3100) e `puzzles_lichess_elite.csv` (rating ≥ 2600: ~1,9 mil de 3000+ para a rainha e ~1,5 mil de 2600–2999 para a torre azul) estão versionados por conveniência. Para regenerá-los:
 
 ```bash
 # baixar (Linux/macOS) — precisa de zstd
 curl -O https://database.lichess.org/lichess_db_puzzle.csv.zst
-unzstd lichess_db_puzzle.csv.zst -o puzzles_lichess.csv
+unzstd lichess_db_puzzle.csv.zst -o lichess_db_puzzle.csv
 
-# opcional: reduzir o arquivo mantendo só rating ≤ 1100 e 50k linhas
+# amostra geral (mantém o cabeçalho)
 head -1 lichess_db_puzzle.csv > puzzles_lichess.csv
-awk -F',' 'NR>1 && $4 <= 1100 {print; if(++n==50000) exit}' \
-    lichess_db_puzzle.csv >> puzzles_lichess.csv
+shuf -n 5000 <(tail -n +2 lichess_db_puzzle.csv) >> puzzles_lichess.csv
+
+# elite: todos de 3000+ e uma amostra de 2600–2999
+head -1 lichess_db_puzzle.csv > puzzles_lichess_elite.csv
+awk -F',' 'NR>1 && $4>=3000' lichess_db_puzzle.csv >> puzzles_lichess_elite.csv
+awk -F',' 'NR>1 && $4>=2600 && $4<=2999' lichess_db_puzzle.csv | shuf -n 1500 >> puzzles_lichess_elite.csv
 ```
 
-Depois é só apagar a coleção `puzzles_xadrez` no Atlas — o `PuzzleImporter` repopula na próxima subida.
+Depois é só reiniciar: o `PuzzleImporter` insere os puzzles que ainda não existem (ou apague a coleção `puzzles_xadrez` no Atlas para recomeçar do zero).
 
 ---
 
@@ -934,7 +955,7 @@ sequenceDiagram
     U->>A: POST /api/auth/login {username, password}
     A->>M: valida senha (BCrypt via AuthenticationManager)
     A->>P: iniciarSessao(usuario)
-    P->>M: $sample puzzle com rating ≤ max
+    P->>M: $sample puzzle na faixa de rating do perfil
     P->>M: salva puzzleAtualId, expiraEm, contadores
     A-->>U: 200 + FEN + prazo + cookie thindesk_pre
 
@@ -1052,6 +1073,8 @@ MAJOR.MINOR.PATCH[-PRÉ-RELEASE]
 | `-alpha` / `-beta` / `-rc.N` | Pré-release: `alpha` = em desenvolvimento, `beta` = funcional porém em testes, `rc` = candidata a lançamento | `1.0.0-beta` → `1.0.0-rc.1` → `1.0.0` |
 
 A versão é declarada em `pom.xml` (`<version>`), exibida na barra lateral da aplicação (`Thindesk v1.0.0-beta`) e registrada no [`CHANGELOG.md`](CHANGELOG.md). Cada lançamento é uma **tag Git anotada** (`v1.0.0-beta`) publicada como **Release** na aba [Releases](https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases) do GitHub; versões `alpha`, `beta` e `rc` são marcadas como *pre-release*.
+
+**Releases publicadas:** cada versão tem uma tag anotada e notas de release em [`docs/releases/`](docs/releases/); o guia e o script para publicá-las no GitHub estão em [`docs/RELEASES.md`](docs/RELEASES.md).
 
 **Como lançar uma nova versão:**
 
