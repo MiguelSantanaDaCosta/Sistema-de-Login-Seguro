@@ -2,7 +2,7 @@
 
 **Aluno:** Miguel Santana da Costa
 **Atividade:** Software corporativo — controle de chamados técnicos (Thindesk)
-**Versão entregue:** `1.0.0-beta`
+**Versão entregue:** `1.0.0-beta.2`
 
 ---
 
@@ -18,10 +18,13 @@ O `README.md` de cada repositório traz a documentação técnica completa (vers
 
 ### Credenciais de exemplo (qualquer pessoa pode entrar)
 
-| Conta | Usuário | Senha | Como entra |
-| ----- | ------- | ----- | ---------- |
+| Perfil | Usuário | Senha | Como entra |
+| ------ | ------- | ----- | ---------- |
 | Usuário comum | `demo` | `demo1234` | Somente usuário e senha |
+| Técnico | `demo-tecnico` | `tecnico123` | Somente usuário e senha (vê a fila técnica e resolve chamados) |
 | Administrador | `demo2` | `demo2-1234` | Usuário e senha + **puzzle de xadrez** de nível admin (não envia email) |
+
+As contas demo não estão fixas no código: um administrador as gerencia na tela **Contas demo** do sistema.
 
 ---
 
@@ -38,7 +41,7 @@ O `README.md` de cada repositório traz a documentação técnica completa (vers
 
 ## 3. Versionamento
 
-**Versão atual: `1.0.0-beta`**
+**Versão atual: `1.0.0-beta.2`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/), no formato:
 
@@ -62,6 +65,7 @@ A versão é declarada no `pom.xml`, aparece na barra lateral da aplicação (`T
 | ------ | --------- |
 | `1.0.0-alpha` | Login seguro (JWT + BCrypt), perfis e cadastro com confirmação por email |
 | `1.0.0-beta` | Integração com o microserviço de chamados, telas de chamados, dashboard, perfis por dificuldade de puzzle, proteção anti-bot e deploy com HTTPS |
+| `1.0.0-beta.2` | Hierarquia única de papéis (Thindesk e microserviço alinhados) e contas demo por perfil gerenciadas por administradores |
 
 ---
 
@@ -88,10 +92,10 @@ Os dados dos chamados vêm do microserviço `ms-chamados`.
 1. Acesse **https://thindesk-santana.duckdns.org/** (o HTTP redireciona para HTTPS).
 2. Entre com **`demo` / `demo1234`** → o sistema abre o **dashboard**.
 3. Clique em **Novo chamado**, preencha título e descrição e salve. O chamado aparece em **Chamados** e no dashboard com status `ABERTO`.
-4. Para ver o **fluxo do técnico** (fila e resolução de chamados): saia e entre com **`demo2` / `demo2-1234`**. Após a senha, o sistema pede um **puzzle de xadrez** (segundo fator): arraste a peça para o melhor lance. Ao acertar, o login termina.
+4. Para ver o **fluxo do técnico** (fila e resolução de chamados): saia e entre com **`demo-tecnico` / `tecnico123`** (só usuário e senha).
 5. No menu, abra **Fila técnica**, escolha um chamado e registre a solução. O status muda para `RESOLVIDO`, com técnico e data de resolução, e o chamado passa a ser imutável.
 
-> O puzzle da conta `demo2` tem nível de administrador (rating 1900–2400) e pode ser difícil. Se errar, o sistema permite novas tentativas e troca de puzzle. As demais contas usam o login completo: senha → puzzle → link enviado ao email do usuário.
+> A conta `demo2` (administrador) passa por um puzzle de nível alto (rating 1900–2400) e pode ser difícil; se errar, o sistema permite novas tentativas. Ela acessa também a gestão de usuários e a tela **Contas demo**. As demais contas usam o login completo: senha → puzzle → link enviado ao email do usuário.
 
 ---
 
@@ -105,7 +109,7 @@ Os dados dos chamados vêm do microserviço `ms-chamados`.
 ### Autenticação e segurança
 - **Login em 3 fatores:** senha (BCrypt) → puzzle de xadrez → link de confirmação enviado ao email do próprio usuário.
 - **Sessão** em JWT dentro de cookie `HttpOnly`.
-- **Perfis:** `USUARIO`, `TECNICO`, `ADMIN` (e `ROOT`, um recurso opcional, desligado por padrão). A dificuldade do puzzle aumenta conforme o perfil.
+- **Perfis em hierarquia:** `ROOT › ADMIN › TECNICO › USUARIO` (`ROOT` é um recurso opcional, desligado por padrão), aplicada igualmente no Thindesk e no microserviço. A dificuldade do puzzle aumenta conforme o perfil.
 - **Autorização em duas camadas:** regras de rota (`SecurityConfig`) e `@PreAuthorize` nos controllers.
 - **Proteção contra bots e IAs:** automação detectada bloqueia o IP por 1 hora (resposta HTTP 418).
 - **HTTPS** com certificado Let's Encrypt renovado automaticamente.

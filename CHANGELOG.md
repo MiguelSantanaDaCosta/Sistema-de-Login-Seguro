@@ -4,6 +4,19 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto adota o
 [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) (`MAJOR.MINOR.PATCH[-PRÉ-RELEASE]`).
 
+## [1.0.0-beta.2] - 2026-11-25
+
+### Alterado
+- **Hierarquia única de papéis** (`ROOT › ADMIN › TECNICO › USUARIO`) em `Role`: o perfil mais alto passa a ter
+  os papéis dos mais baixos, tanto nas permissões do Thindesk quanto na claim `roles` do JWT enviada ao `ms-chamados`.
+- **Contas de demonstração deixam de ser fixas no código**: um ADMIN as cria, redefine e remove em
+  *Contas demo* (`/admin/demos`), para os perfis USUARIO, TECNICO e ADMIN (ROOT não é permitido).
+- O administrador agora vem do ambiente (`ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`); se o usuário
+  configurado mudar, o admin padrão antigo é promovido em vez de permanecer com a senha padrão.
+
+### Removido
+- Criação automática das contas `demo` e `demo2` e suas senhas padrão no código e no `application.properties`.
+
 ## [1.0.0-beta] - 2026-11-25
 
 Primeira versão funcional de ponta a ponta (aplicação web + microserviço de chamados + deploy).
@@ -36,5 +49,6 @@ Primeira versão funcional de ponta a ponta (aplicação web + microserviço de 
 - Segundo fator por puzzle de xadrez (puzzles públicos do Lichess) e terceiro fator por link enviado por email.
 - Temas visuais plugáveis e persistência no MongoDB Atlas.
 
+[1.0.0-beta.2]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta.2
 [1.0.0-beta]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta
 [1.0.0-alpha]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-alpha

@@ -145,8 +145,9 @@ APP_BASE_URL=http://localhost:8000                # usado nos links dos emails
 CHAMADOS_URL=http://localhost:8081                # endereço do ms-chamados
 
 # --- admin e emails ---
+ADMIN_USERNAME=admin                              # usuário do administrador
+ADMIN_PASSWORD=troque-esta-senha                  # senha do administrador (definida na 1ª subida)
 ADMIN_EMAIL=admin@thindesk.local                  # email do admin (recebe o link de login)
-ADMIN_PASSWORD=troque-esta-senha                  # usada só na 1ª subida
 MAIL_ENABLED=false                                # true para enviar de verdade
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
@@ -163,7 +164,7 @@ PUZZLE_MAX_POR_SESSAO=3
 
 # --- recursos opcionais (desligados por padrão) ---
 ROOT_ENABLED=false        # rainha vermelha / perfil root (CUIDADO: acesso total ao banco)
-DEMO_ENABLED=false        # contas de demonstração (ver "Deploy e acesso")
+DEMO_ENABLED=false        # contas demo criadas por um ADMIN em /admin/demos
 ANALISE_ENABLED=false     # cruzamento dos puzzles com partidas do Lichess
 BOT_PROTECAO=true         # bloqueio de IP por 1h (418) no desafio root
 BOT_IPS_PERMITIDOS=       # IPs que nunca são bloqueados
@@ -969,6 +970,20 @@ O segundo fator (puzzle de xadrez) tem dificuldade proporcional ao perfil. O **m
 - O link de confirmação do login é enviado ao **email cadastrado do próprio usuário** que está logando.
 - O `ADMIN_EMAIL` define o email do usuário `admin` no primeiro boot (e substitui o placeholder `@thindesk.local` se o admin já existir).
 
+### Papéis, hierarquia e o microserviço
+
+Os papéis seguem **uma hierarquia única**, aplicada igualmente pelo Thindesk e pelo `ms-chamados`: `ROOT › ADMIN › TECNICO › USUARIO` (cada perfil herda tudo o que os de baixo podem). O Thindesk envia no JWT a lista **já expandida** (`roles`), e o microserviço reaplica a mesma regra, então um token com um único papel também funciona.
+
+| Ação | USUARIO | TECNICO | ADMIN | ROOT |
+| ---- | :-----: | :-----: | :---: | :--: |
+| Abrir chamado e ver os próprios | ✅ | ✅ | ✅ | ✅ |
+| Ver chamados de qualquer usuário | ❌ | ✅ | ✅ | ✅ |
+| Fila de chamados abertos e resolver (`/tecnico/**`) | ❌ | ✅ | ✅ | ✅ |
+| Gerenciar usuários e contas demo (`/admin/**`) | ❌ | ❌ | ✅ | ✅ |
+| Painel de banco de dados (`/root/**`) | ❌ | ❌ | ❌ | ✅ |
+
+> Verificado chamando o `ms-chamados` diretamente com tokens de cada perfil (abrir, listar próprios, listar de outro, buscar de outro, fila de abertos e resolver): todos os perfis respondem conforme a tabela.
+
 ### Rainha vermelha (`ROLE_ROOT`) — recurso "piada"
 
 Com `ROOT_ENABLED=true`, aparece uma rainha vermelha (♛) no canto da tela. Ela leva ao **desafio**: resolver **5 puzzles seguidos, sem errar, em 5 minutos**, todos com **rating ≥ 3000** (`puzzles_lichess_elite.csv`, ~1.9 mil puzzles). Quem vence recebe a sessão do usuário `root` **sem precisar de login** e ganha o **Painel root** (`/root`): navegar, inserir, editar e **excluir** qualquer documento dos bancos `thindesk` e `ms_chamados`, além de acesso a todos os endpoints.
@@ -998,7 +1013,7 @@ O IP vem da conexão (nunca de header do cliente) e o bloqueio também é marcad
 
 ## 🏷️ Versionamento
 
-**Versão atual: `1.0.0-beta`**
+**Versão atual: `1.0.0-beta.2`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) no formato:
 
@@ -1030,6 +1045,7 @@ git push origin main --tags                        # 3) publicar commits e tags
 | ------ | --------- |
 | `1.0.0-alpha` | Login seguro (JWT + BCrypt), perfis e cadastro com confirmação por email |
 | `1.0.0-beta` | Integração com o microserviço de chamados técnicos, telas de chamados (cliente/técnico) e deploy |
+| `1.0.0-beta.2` | Hierarquia única de papéis alinhada ao microserviço e contas demo gerenciadas por administradores |
 
 ---
 
@@ -1085,14 +1101,15 @@ Configuração: `ANALISE_ENABLED`, `ANALISE_AMOSTRA` (padrão 1500), `ANALISE_IN
 
 **Credencial de exemplo:**
 
-Qualquer pessoa pode entrar com a **conta de demonstração** (perfil `USUARIO`, sem privilégios administrativos):
+Qualquer pessoa pode entrar com as **contas de demonstração** (uma por perfil, sem acesso ao banco nem ao `ROOT`):
 
-| Conta | Usuário | Senha | Como entra |
-| ----- | ------- | ----- | ---------- |
-| Usuário comum | `demo` | `demo1234` | só usuário e senha |
-| Administrador | `demo2` | `demo2-1234` | senha + **puzzle de xadrez** de nível admin (rating 1900–2400); **não envia email** |
+| Perfil | Usuário | Senha | Como entra |
+| ------ | ------- | ----- | ---------- |
+| `USUARIO` | `demo` | `demo1234` | só usuário e senha |
+| `TECNICO` | `demo-tecnico` | `tecnico123` | só usuário e senha (vê a fila técnica e resolve chamados) |
+| `ADMIN` | `demo2` | `demo2-1234` | senha + **puzzle de xadrez** de nível admin (rating 1900–2400); **não envia email** |
 
-As contas de demonstração só existem/funcionam quando `DEMO_ENABLED=true`. A `demo` entra **somente com senha**; a `demo2` passa pelo puzzle como todo admin, mas o login termina ao acertá-lo (sem link por email). As demais contas usam o login completo em 3 fatores (senha → puzzle de xadrez → link enviado ao email do usuário). Pode abrir chamados à vontade.
+As contas demo **não estão no código**: um administrador as cria, redefine e remove em **Contas demo** (`/admin/demos`), escolhendo o perfil e se a conta entra só com senha ou com senha + puzzle. O recurso é ligado por `DEMO_ENABLED=true`. As demais contas usam o login completo (senha → puzzle → link enviado ao email do usuário). Pode abrir chamados à vontade.
 
 ---
 
