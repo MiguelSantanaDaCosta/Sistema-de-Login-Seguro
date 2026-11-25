@@ -1,6 +1,6 @@
 # 🔐 Thindesk — Sistema de Login Seguro com Spring Boot, Thymeleaf e MongoDB Atlas
 
-Sistema de **autenticação e autorização** construído em Java Spring Boot + Thymeleaf + MongoDB Atlas, projetado de forma **modular e genérica**: a camada de segurança é independente da regra de negócio, permitindo que o tema visual e o domínio da aplicação sejam substituídos sem alterar a lógica central de autenticação.
+Sistema de **controle de chamados técnicos** com **autenticação em múltiplos fatores**, construído em Java Spring Boot + Thymeleaf + MongoDB Atlas. A camada de segurança é **modular e independente** da regra de negócio, e os chamados vivem em um **microserviço próprio** ([ms-chamados](https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos-)) que valida o mesmo JWT.
 
 > O projeto vem com um **tema plugável de demonstração** (puzzle de xadrez como segundo fator de autenticação), mas esse tema é opcional — dá para remover trocando **um service** e **um modal**.
 
@@ -30,28 +30,34 @@ Sistema de **autenticação e autorização** construído em Java Spring Boot + 
 ## 🎯 Visão Geral
 
 - **Cadastro público** em 2 etapas: cria usuário `PENDENTE` → envia link de confirmação por email → ativa a conta.
-- **Login** com senha (BCrypt).
-- **Autorização por perfil (Role)** com 3 perfis: `ROLE_ADMIN`, `ROLE_TECNICO`, `ROLE_USUARIO`.
+- **Login em 3 fatores:** senha (BCrypt) → **puzzle de xadrez** → **link enviado ao email do próprio usuário**.
+- **4 perfis:** `ROLE_USUARIO`, `ROLE_TECNICO`, `ROLE_ADMIN` e `ROLE_ROOT` (este só se obtém vencendo o desafio da rainha vermelha — ver [Perfis](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)).
+- **Dificuldade do puzzle por perfil** (rating do Lichess crescente de usuário a admin).
+- **Chamados técnicos** (abrir, acompanhar, resolver) integrados ao microserviço `ms-chamados` por JWT com os papéis do usuário.
+- **Dashboard** com indicadores dos chamados, fila da equipe e cruzamento dos puzzles com partidas reais do Lichess.
 - **Sessão** via **JWT em cookie HttpOnly** (`thindesk_auth`) — imune a leitura por XSS.
-- **Segundo fator opcional** (no tema de demonstração, puzzle de xadrez) + **terceiro fator** por link de confirmação em email (token opaco de uso único com TTL no MongoDB).
+- **Proteção contra bots e IAs** com bloqueio de IP por 1 hora (HTTP 418).
 - **Temas visuais plugáveis** — cada usuário escolhe seu tema; adicionar um tema novo = adicionar 1 arquivo CSS.
 - **Defesa em profundidade** — `SecurityConfig` **e** `@PreAuthorize` nos controllers.
+- **Deploy** em AWS EC2 com Docker Compose, Caddy (HTTPS automático) e MongoDB Atlas.
 
 ---
 
 ## 🧱 Stack
 
-| Camada       | Tecnologia                               |
-| ------------ | ---------------------------------------- |
-| Linguagem    | Java 21                                  |
-| Framework    | Spring Boot 3.4                          |
-| Segurança    | Spring Security 6 + JWT (jjwt 0.12)      |
-| Persistência | Spring Data MongoDB 4.4 (Atlas ou local) |
-| View         | Thymeleaf 3 + thymeleaf-layout-dialect   |
-| Frontend     | Bootstrap 5 + JavaScript (fetch API)     |
-| Hash         | BCrypt (via Spring Security)             |
-| Email        | Spring Boot Starter Mail (SMTP)          |
-| Build        | Maven (com wrapper `./mvnw`)             |
+| Camada       | Tecnologia                                         |
+| ------------ | -------------------------------------------------- |
+| Linguagem    | Java 21                                            |
+| Framework    | Spring Boot 3.4                                    |
+| Segurança    | Spring Security 6 + JWT (jjwt 0.12)                |
+| Persistência | Spring Data MongoDB (Atlas ou local)               |
+| View         | Thymeleaf 3 + thymeleaf-layout-dialect             |
+| Frontend     | Bootstrap 5 + JavaScript (fetch API), chess.js     |
+| Hash         | BCrypt (via Spring Security)                       |
+| Email        | Spring Boot Starter Mail (SMTP)                    |
+| Microserviço | `ms-chamados` (Spring Boot 4, REST, JWT, Swagger)  |
+| Build        | Maven (com wrapper `./mvnw`)                       |
+| Deploy       | Docker + Docker Compose, Caddy (HTTPS), AWS EC2    |
 
 ---
 
@@ -61,19 +67,28 @@ Sistema de **autenticação e autorização** construído em Java Spring Boot + 
 ┌─────────────────────────────────────────────────────────────────┐
 │  Navegador (Thymeleaf + fetch API + cookie HttpOnly)            │
 └───────────────────────────┬─────────────────────────────────────┘
-                            │ HTTP
+                            │ HTTPS
 ┌───────────────────────────▼─────────────────────────────────────┐
-│  Filtro: JwtAuthFilter (lê cookie/header, popula SecurityContext)
+│  Caddy (proxy reverso, certificado Let's Encrypt)               │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ HTTP (rede interna do Docker)
+┌───────────────────────────▼─────────────────────────────────────┐
+│  Filtros: BotBlockFilter (IP bloqueado → 418) · JwtAuthFilter   │
 ├─────────────────────────────────────────────────────────────────┤
-│  Controllers: /api/auth/*  /admin/*  /tecnico/*  /              │
+│  Controllers: /api/auth/*  /  /chamados  /tecnico/*  /admin/*   │
+│               /root/*  (desafio e painel)                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  Services: UsuarioService · EmailService · EmailTokenService    │
-│            ThemeService · (services de domínio)                 │
-├─────────────────────────────────────────────────────────────────┤
-│  Repositories (Spring Data Mongo)                               │
-├─────────────────────────────────────────────────────────────────┤
+│  Services: UsuarioService · PuzzleService · EmailService        │
+│            EmailTokenService · RootDesafioService · BotGuard    │
+│            PuzzleAnaliseService · ChamadoClient (REST + JWT)    │
+├──────────────────────────────┬──────────────────────────────────┤
+│  Repositories (Spring Data)  │  ms-chamados  (JWT com roles)    │
+├──────────────────────────────┴──────────────────────────────────┤
 │  MongoDB Atlas                                                  │
-│   coleções: usuarios · email_tokens (TTL) · theme_config        │
+│   thindesk: usuarios · puzzles_xadrez · email_tokens (TTL)      │
+│             theme_config · root_desafios (TTL) · ip_bloqueados  │
+│             (TTL) · puzzle_analise                              │
+│   ms_chamados: chamados (+ auditoria JaVers)                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -119,23 +134,43 @@ Sistema de **autenticação e autorização** construído em Java Spring Boot + 
 
 ## ⚙️ Configuração
 
-Copie `.env.example` → `.env` e preencha:
+Copie `.env.example` → `.env` e preencha (o arquivo de exemplo documenta todas as variáveis opcionais):
 
 ```dotenv
-SERVER_PORT=8000
+# --- obrigatórias ---
 MONGO_URI=mongodb+srv://USUARIO:SENHA@cluster0.xxxxx.mongodb.net/thindesk?retryWrites=true&w=majority
-JWT_SECRET=<base64 de pelo menos 32 bytes>   # openssl rand -base64 64
-PUZZLE_RATING_MAX=1100
-PUZZLE_TEMPO_LIMITE=300
-PUZZLE_MAX_POR_SESSAO=3
-APP_BASE_URL=http://localhost:8000
-ADMIN_EMAIL=admin@thindesk.local
-MAIL_ENABLED=false
-MAIL_HOST=smtp.mailtrap.io
+MONGO_URI_CHAMADOS=mongodb+srv://USUARIO:SENHA@cluster0.xxxxx.mongodb.net/ms_chamados?retryWrites=true&w=majority
+JWT_SECRET=<igual no thindesk e no ms-chamados>   # openssl rand -hex 32
+APP_BASE_URL=http://localhost:8000                # usado nos links dos emails
+CHAMADOS_URL=http://localhost:8081                # endereço do ms-chamados
+
+# --- admin e emails ---
+ADMIN_EMAIL=admin@thindesk.local                  # email do admin (recebe o link de login)
+ADMIN_PASSWORD=troque-esta-senha                  # usada só na 1ª subida
+MAIL_ENABLED=false                                # true para enviar de verdade
+MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=
 MAIL_PASSWORD=
-DEV_EXPOR_LINK=false   # true SOMENTE em testes automatizados
+
+# --- puzzles (opcionais) ---
+PUZZLE_USUARIO_MIN=1100   PUZZLE_USUARIO_MAX=1399
+PUZZLE_TECNICO_MIN=1400   PUZZLE_TECNICO_MAX=1800
+PUZZLE_ADMIN_MIN=1900     PUZZLE_ADMIN_MAX=2400
+PUZZLE_EMAIL_FACIL=       # email da conta que sempre recebe puzzles <= 1000
+PUZZLE_TEMPO_LIMITE=300
+PUZZLE_MAX_POR_SESSAO=3
+
+# --- recursos opcionais (desligados por padrão) ---
+ROOT_ENABLED=false        # rainha vermelha / perfil root (CUIDADO: acesso total ao banco)
+DEMO_ENABLED=false        # contas de demonstração (ver "Deploy e acesso")
+ANALISE_ENABLED=false     # cruzamento dos puzzles com partidas do Lichess
+BOT_PROTECAO=true         # bloqueio de IP por 1h (418) no desafio root
+BOT_IPS_PERMITIDOS=       # IPs que nunca são bloqueados
+
+# --- deploy com HTTPS (Caddy) ---
+DOMINIO=thindesk-santana.duckdns.org
+DEV_EXPOR_LINK=false      # true SOMENTE em testes automatizados
 ```
 
 ### 📧 Enviando emails com Gmail (alternativa ao Mailtrap)
@@ -1013,28 +1048,29 @@ Configuração: `ANALISE_ENABLED`, `ANALISE_AMOSTRA` (padrão 1500), `ANALISE_IN
 
 ## 🌐 Deploy e acesso
 
-### Passo a passo (AWS EC2 + Docker + Atlas)
+### Passo a passo (AWS EC2 + Docker + Atlas + HTTPS)
 
-1. **EC2:** Ubuntu 22.04/24.04, `t3.small` (ou `t2.micro` free tier com swap). *Security Group*: entrada `22` (seu IP), `80` e `443` (0.0.0.0/0). Associe um **Elastic IP**.
-2. **Atlas → Network Access:** libere o Elastic IP da EC2 (ou `0.0.0.0/0` apenas para a demonstração).
-3. **Instalar Docker na VM:**
+1. **EC2:** Ubuntu 22.04/24.04, `t3.small` (ou `t2.micro` com swap de 2 GB). *Security Group*: entrada `22` (seu IP), `80` e `443` (0.0.0.0/0). Associe um **Elastic IP** (sem ele o IP muda ao reiniciar a VM).
+2. **Domínio gratuito (DuckDNS):** em [duckdns.org](https://www.duckdns.org) crie um subdomínio (ex.: `thindesk-santana`) apontando para o IP da EC2.
+3. **Atlas → Network Access:** libere o IP da EC2 (ou `0.0.0.0/0` apenas para a demonstração).
+4. **Instalar Docker na VM:**
    ```bash
    curl -fsSL https://get.docker.com | sudo sh
    sudo usermod -aG docker $USER && newgrp docker
    ```
-4. **Clonar os dois repositórios lado a lado:**
+5. **Clonar os dois repositórios lado a lado:**
    ```bash
    git clone https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro.git thindesk
    git clone https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos-.git ms-chamados
    cd thindesk && cp .env.example .env && nano .env
    ```
-   No `.env`: `MONGO_URI` (Atlas), `JWT_SECRET` (igual no microserviço), `APP_BASE_URL=http://<ELASTIC-IP>`, e `MAIL_*` para os emails reais.
-5. **Subir:** `docker compose up -d --build` e acompanhar com `docker compose logs -f`.
-6. Acessar `http://<ELASTIC-IP>/`.
+   No `.env`: `MONGO_URI`, `MONGO_URI_CHAMADOS`, `JWT_SECRET` (o mesmo nos dois serviços), `DOMINIO=<seu-subdominio>.duckdns.org`, `APP_BASE_URL=https://<seu-subdominio>.duckdns.org` e `MAIL_*` para os emails reais.
+6. **Subir:** `docker compose up -d --build` e acompanhar com `docker compose logs -f`. O **Caddy** emite o certificado Let's Encrypt sozinho e redireciona HTTP → HTTPS.
+7. Acessar `https://<seu-subdominio>.duckdns.org/`.
 
 | Item | Link |
 | ---- | ---- |
-| Aplicação (deploy) | **http://3.145.58.232/** |
+| Aplicação (deploy) | **https://thindesk-santana.duckdns.org/** |
 | Repositório — Login seguro / Thindesk | https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro |
 | Repositório — Microserviço de chamados | https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos- |
 
