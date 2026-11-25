@@ -53,7 +53,10 @@ MAJOR.MINOR.PATCH[-PRÉ-RELEASE]
 | `PATCH` | Correção de bug compatível | `1.0.0` → `1.0.1` |
 | `-alpha` / `-beta` / `-rc.N` | Pré-release: `alpha` = em desenvolvimento, `beta` = funcional e em testes, `rc` = candidata a lançamento | `1.0.0-beta` → `1.0.0-rc.1` → `1.0.0` |
 
-A versão é declarada no `pom.xml` e cada lançamento é marcado com uma tag Git (`v1.0.0-beta`).
+A versão é declarada no `pom.xml`, aparece na barra lateral da aplicação (`Thindesk v1.0.0-beta`) e é registrada no `CHANGELOG.md`. Cada lançamento é uma **tag Git anotada** publicada como **Release** no GitHub:
+
+- Thindesk: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases
+- Microserviço: https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos-/releases
 
 | Versão | Descrição |
 | ------ | --------- |

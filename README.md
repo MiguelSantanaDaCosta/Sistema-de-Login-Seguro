@@ -1013,7 +1013,16 @@ MAJOR.MINOR.PATCH[-PRÉ-RELEASE]
 | `PATCH` | Correção de bug compatível | `1.0.0` → `1.0.1` |
 | `-alpha` / `-beta` / `-rc.N` | Pré-release: `alpha` = em desenvolvimento, `beta` = funcional porém em testes, `rc` = candidata a lançamento | `1.0.0-beta` → `1.0.0-rc.1` → `1.0.0` |
 
-A versão é declarada em `pom.xml` (`<version>`) e cada release é marcada com uma tag Git (`v1.0.0-beta`).
+A versão é declarada em `pom.xml` (`<version>`), exibida na barra lateral da aplicação (`Thindesk v1.0.0-beta`) e registrada no [`CHANGELOG.md`](CHANGELOG.md). Cada lançamento é uma **tag Git anotada** (`v1.0.0-beta`) publicada como **Release** na aba [Releases](https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases) do GitHub; versões `alpha`, `beta` e `rc` são marcadas como *pre-release*.
+
+**Como lançar uma nova versão:**
+
+```bash
+# 1) ajustar <version> no pom.xml e registrar no CHANGELOG.md; commitar
+git tag -a v1.0.0-rc.1 -m "Thindesk 1.0.0-rc.1"   # 2) tag anotada no commit da versão
+git push origin main --tags                        # 3) publicar commits e tags
+# 4) GitHub → Releases → Draft a new release → escolher a tag → colar as notas do CHANGELOG
+```
 
 **Histórico:**
 
