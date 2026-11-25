@@ -114,4 +114,56 @@
     </div>
   </div>
 
+  <!-- Puzzles x partidas reais do Lichess -->
+  <div class="card border-0 shadow-sm mt-4" th:if="${analise.analisados() > 0}">
+    <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-trophy"></i> Puzzles &times; partidas reais do Lichess</span>
+      <small class="text-muted" th:text="${analise.analisados()} + ' de ' + ${analise.puzzlesNaBase()} + ' puzzles analisados'
+        + (${analise.emAndamento()} ? ' (em andamento…)' : '')"></small>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 text-center mb-3">
+        <div class="col-6 col-md-3">
+          <div class="display-6 fw-bold text-primary" th:text="${analise.analisados()}">0</div>
+          <div class="small text-muted">vêm de partidas reais<br />(100% têm partida de origem)</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="display-6 fw-bold" th:text="${analise.mestres()}">0</div>
+          <div class="small text-muted">posição já ocorreu em<br />partida de mestres (OTB)</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="display-6 fw-bold text-warning" th:text="${analise.gm()}">0</div>
+          <div class="small text-muted">partida de origem com<br />Grande Mestre (GM)</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="display-6 fw-bold text-success" th:text="${analise.titulados()}">0</div>
+          <div class="small text-muted">com outro jogador titulado<br />(IM, FM, CM…)</div>
+        </div>
+      </div>
+
+      <div class="table-responsive" th:if="${!#lists.isEmpty(analise.destaques())}">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>Destaque</th><th>Rating</th><th>Jogadores</th><th>Ano</th><th>Origem</th><th></th></tr></thead>
+          <tbody>
+            <tr th:each="d : ${analise.destaques()}">
+              <td><span class="badge"
+                  th:classappend="${d.categoria() == 'MESTRES'} ? 'bg-danger' : (${d.categoria() == 'GM'} ? 'bg-warning text-dark' : 'bg-success')"
+                  th:text="${d.categoria() == 'MESTRES'} ? 'Mestres' : (${d.categoria() == 'GM'} ? 'GM' : 'Titulado')"></span></td>
+              <td th:text="${d.rating()}"></td>
+              <td th:text="${d.jogadores()}"></td>
+              <td th:text="${d.ano()}"></td>
+              <td th:text="${d.origem()}"></td>
+              <td><a th:href="${d.link()}" target="_blank" rel="noopener noreferrer">Ver no Lichess &#8599;</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="small text-muted mt-3 mb-0" th:if="${analise.mestres() == 0}">
+        Nenhuma posição de puzzle apareceu em partidas de mestres: era esperado, pois os puzzles do Lichess
+        são extraídos de partidas <i>online</i> de jogadores comuns, e posições de meio de jogo quase nunca se
+        repetem em partidas oficiais.
+      </p>
+    </div>
+  </div>
 </div>

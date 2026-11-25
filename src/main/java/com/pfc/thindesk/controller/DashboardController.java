@@ -22,6 +22,8 @@ public class DashboardController {
 
     @Autowired
     private ChamadoClient chamadoClient;
+    @Autowired
+    private com.pfc.thindesk.analise.PuzzleAnaliseService analiseService;
 
     @GetMapping("/")
     public String dashboard(Model model, Authentication auth) {
@@ -56,6 +58,7 @@ public class DashboardController {
         model.addAttribute("fila", fila.stream().limit(5).toList());
         model.addAttribute("filaTotal", fila.size());
         model.addAttribute("erro", erro);
+        model.addAttribute("analise", analiseService.resumo());
         model.addAttribute("content", "dashboard :: content");
         return "layout";
     }
