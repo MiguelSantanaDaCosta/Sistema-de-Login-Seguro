@@ -5,7 +5,7 @@
       <h2 class="mb-0">Dashboard</h2>
       <small class="text-muted">Olá, <b th:text="${nome}">usuário</b> — resumo dos seus chamados técnicos</small>
     </div>
-    <a th:href="@{/chamados/novo}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo chamado</a>
+    <a th:href="@{/chamados/novo}" class="btn btn-primary"><i aria-hidden="true" class="bi bi-plus-lg"></i> Novo chamado</a>
   </div>
 
   <div th:if="${promovido != null}" class="alert alert-success">
@@ -111,8 +111,8 @@
           <li class="list-group-item"><a th:href="@{/tecnico/chamados}">Abrir fila técnica</a></li>
         </ul>
         <div class="list-group list-group-flush" th:unless="${tecnico}">
-          <a th:href="@{/chamados/novo}" class="list-group-item list-group-item-action"><i class="bi bi-plus-circle"></i> Abrir novo chamado</a>
-          <a th:href="@{/chamados}" class="list-group-item list-group-item-action"><i class="bi bi-list-check"></i> Acompanhar meus chamados</a>
+          <a th:href="@{/chamados/novo}" class="list-group-item list-group-item-action"><i aria-hidden="true" class="bi bi-plus-circle"></i> Abrir novo chamado</a>
+          <a th:href="@{/chamados}" class="list-group-item list-group-item-action"><i aria-hidden="true" class="bi bi-list-check"></i> Acompanhar meus chamados</a>
         </div>
       </div>
     </div>
@@ -121,7 +121,7 @@
   <!-- Puzzles x partidas reais do Lichess -->
   <div class="card border-0 shadow-sm mt-4" th:if="${analise.analisados() > 0}">
     <div class="card-header bg-transparent fw-semibold d-flex justify-content-between align-items-center">
-      <span><i class="bi bi-trophy"></i> Puzzles &times; partidas reais do Lichess</span>
+      <span><i aria-hidden="true" class="bi bi-trophy"></i> Puzzles &times; partidas reais do Lichess</span>
       <small class="text-muted" th:text="${analise.analisados()} + ' de ' + ${analise.puzzlesNaBase()} + ' puzzles analisados'
         + (${analise.emAndamento()} ? ' (em andamento…)' : '')"></small>
     </div>

@@ -116,7 +116,7 @@
     const lance = game.move({ from: origem, to: destino, promotion: "q" });
     if (lance === null) return "snapback";
     aguardando = true;
-    enviar(origem + destino);
+    enviar(origem + destino + (lance.promotion || ""));
   }
 
   async function enviar(uci) {

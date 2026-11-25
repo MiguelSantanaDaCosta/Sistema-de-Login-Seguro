@@ -11,22 +11,22 @@
         <ul class="nav flex-column">
           <li class="nav-item">
             <a class="nav-link" th:href="@{/}" aria-current="page">
-              <i class="bi bi-house"></i>
-              <span class="d-none d-md-inline">Início</span>
+              <i aria-hidden="true" class="bi bi-house"></i>
+              <span>Início</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" th:href="@{/chamados}">
-              <i class="bi bi-headset"></i>
-              <span class="d-none d-md-inline">Chamados</span>
+              <i aria-hidden="true" class="bi bi-headset"></i>
+              <span>Chamados</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" th:href="@{/clientes}">
-              <i class="bi bi-person"></i>
-              <span class="d-none d-md-inline">Clientes</span>
+              <i aria-hidden="true" class="bi bi-person"></i>
+              <span>Clientes</span>
             </a>
           </li>
           <!-- Área do técnico — visível só para TECNICO ou ADMIN -->
@@ -36,8 +36,8 @@
             xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
           >
             <a class="nav-link" th:href="@{/tecnico/chamados}">
-              <i class="bi bi-wrench-adjustable"></i>
-              <span class="d-none d-md-inline">Fila técnica</span>
+              <i aria-hidden="true" class="bi bi-wrench-adjustable"></i>
+              <span>Fila técnica</span>
             </a>
           </li>
 
@@ -48,8 +48,8 @@
             xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
           >
             <a class="nav-link text-danger" th:href="@{/root}">
-              <i class="bi bi-database-fill-gear"></i>
-              <span class="d-none d-md-inline">Banco (root)</span>
+              <i aria-hidden="true" class="bi bi-database-fill-gear"></i>
+              <span>Banco (root)</span>
             </a>
           </li>
 
@@ -60,8 +60,8 @@
             xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
           >
             <a class="nav-link" th:href="@{/admin/usuarios}">
-              <i class="bi bi-shield-lock"></i>
-              <span class="d-none d-md-inline">Usuários</span>
+              <i aria-hidden="true" class="bi bi-shield-lock"></i>
+              <span>Usuários</span>
             </a>
           </li>
           <li
@@ -70,40 +70,40 @@
             xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
           >
             <a class="nav-link" th:href="@{/admin/demos}">
-              <i class="bi bi-person-badge"></i>
-              <span class="d-none d-md-inline">Contas demo</span>
+              <i aria-hidden="true" class="bi bi-person-badge"></i>
+              <span>Contas demo</span>
             </a>
           </li>
 
           <li class="nav-item">
             <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
-              <i class="bi bi-gear"></i>
-              <span class="d-none d-md-inline">Configurações</span>
+              <i aria-hidden="true" class="bi bi-gear"></i>
+              <span>Configurações</span>
               <span class="float-end">&#9662;</span>
             </a>
             <ul class="nav flex-column submenu">
               <li class="nav-item">
                 <a class="nav-link" th:href="@{/tecnicos}">
-                  <i class="bi bi-person"></i>
-                  <span class="d-none d-md-inline">Técnicos</span>
+                  <i aria-hidden="true" class="bi bi-person"></i>
+                  <span>Técnicos</span>
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" th:href="@{/tipo-chamado}">
-                  <i class="bi bi-megaphone"></i>
-                  <span class="d-none d-md-inline">Tipo de Chamado</span>
+                  <i aria-hidden="true" class="bi bi-megaphone"></i>
+                  <span>Tipo de Chamado</span>
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" th:href="@{/ajustes-horarios}">
-                  <i class="bi bi-alarm"></i>
-                  <span class="d-none d-md-inline">Horário de Atendimento</span>
+                  <i aria-hidden="true" class="bi bi-alarm"></i>
+                  <span>Horário de Atendimento</span>
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" th:href="@{/recursos}">
-                  <i class="bi bi-screwdriver"></i>
-                  <span class="d-none d-md-inline">Recursos</span>
+                  <i aria-hidden="true" class="bi bi-screwdriver"></i>
+                  <span>Recursos</span>
                 </a>
               </li>
             </ul>
@@ -112,8 +112,8 @@
           <!-- Botão Sair — dentro do <ul>, com separador -->
           <li class="nav-item mt-3 border-top pt-2">
             <a class="nav-link" href="#" onclick="logout(event)">
-              <i class="bi bi-box-arrow-right"></i>
-              <span class="d-none d-md-inline">Sair</span>
+              <i aria-hidden="true" class="bi bi-box-arrow-right"></i>
+              <span>Sair</span>
             </a>
           </li>
         </ul>

@@ -210,7 +210,7 @@
     aguardando = true;
     marcar(origem, "sq-origem");
     marcar(destino, "sq-origem");
-    enviar(origem + destino, destino); // ex.: "e2e4"
+    enviar(origem + destino + (lance.promotion || ""), destino); // e2e4 ou e7e8q
   }
 
   // Sincroniza o tabuleiro visual com o estado real (roque, en passant...)
@@ -250,7 +250,8 @@
 
       const dados = await resp.json().catch(() => ({}));
 
-      if (resp.status === 429 || resp.status === 401) {
+      if (resp.status === 429 || resp.status === 401
+          || (!dados.novoPuzzle && resp.status !== 403)) {
         mensagem(dados.erro || "Sessão encerrada.", "erro");
         encerrar(dados.erro || "Sessão encerrada. Faça login novamente.");
         return;
@@ -269,7 +270,7 @@
           desfazerLance();
           puzzle.restantes = dados.restantes;
           desenharTentativas(dados.restantes, puzzle.maxTentativas);
-          mensagem("Tente outro lance.", "info");
+          mensagem(dados.erro || "Tente outro lance.", "erro");
         }
       }, 900);
     } catch (ex) {

@@ -22,9 +22,9 @@
   </head>
 
   <body th:attr="data-theme=${temaAtivo} ?: 'default'">
-    <div class="toggle-btn btn btn-dark d-md-none">
+    <button type="button" class="toggle-btn btn btn-dark d-md-none" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
       <span>&#9776;</span>
-    </div>
+    </button>
 
     <aside>
       <div th:replace="~{fragments/sidebar :: sidebar}"></div>
