@@ -1,0 +1,7 @@
+# Proxy reverso com HTTPS automático (Let's Encrypt). O domínio vem da variável DOMINIO (.env).
+# Caddy redireciona http -> https sozinho e renova o certificado.
+{$DOMINIO} {
+	encode gzip
+	# Passa o IP real do cliente (X-Forwarded-For); o Thindesk confia só em proxies da rede interna do Docker.
+	reverse_proxy thindesk:8000
+}

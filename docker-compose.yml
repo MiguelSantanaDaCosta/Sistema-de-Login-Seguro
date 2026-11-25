@@ -8,10 +8,27 @@ services:
     env_file: .env
     environment:
       CHAMADOS_URL: http://ms-chamados:8081   # rede interna do compose
-    ports:
-      - "80:8000"       # HTTP público -> app
+    expose:
+      - "8000"          # só acessível pela rede interna; quem publica 80/443 é o Caddy
     depends_on:
       - ms-chamados
+
+  # HTTPS automático (Let's Encrypt) para o domínio definido em DOMINIO no .env
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificados (persistem entre reinícios)
+      - caddy_config:/config
+    depends_on:
+      - thindesk
 
   # Microserviço de chamados (outro repositório, clonado em ../ms-chamados).
   ms-chamados:
@@ -24,3 +41,7 @@ services:
       SERVER_PORT: 8081
     expose:
       - "8081"          # só acessível dentro da rede do compose
+
+volumes:
+  caddy_data:
+  caddy_config:
