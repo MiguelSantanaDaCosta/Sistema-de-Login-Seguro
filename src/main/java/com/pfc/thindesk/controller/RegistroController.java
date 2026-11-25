@@ -57,9 +57,9 @@ public class RegistroController {
             return ResponseEntity.badRequest().body(Map.of("erro", primeiro, "campos", campos));
         }
 
-        String token;
+        UsuarioService.ResultadoRegistro resultadoRegistro;
         try {
-            token = usuarioService.registrar(req);
+            resultadoRegistro = usuarioService.registrar(req);
         } catch (ConflitoCadastroException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("erro", e.getMessage()));
         } catch (DuplicateKeyException e) {
@@ -69,11 +69,18 @@ public class RegistroController {
         }
 
         Map<String, Object> corpo = new LinkedHashMap<>();
-        corpo.put("mensagem", "Cadastro recebido! Enviamos um link de confirmação para o seu email. "
-                + "Clique nele para ativar a conta.");
+        if (resultadoRegistro.emailEnviado()) {
+            corpo.put("mensagem", "Cadastro recebido! Enviamos um link de confirmação para o seu email. "
+                    + "Clique nele para ativar a conta.");
+        } else {
+            // a conta foi criada, mas o email não saiu: não fingir que saiu
+            corpo.put("mensagem", "Cadastro recebido, mas não conseguimos enviar o email de confirmação agora. "
+                    + "Na tela de login, use \"Esqueci minha senha\" com o seu email para receber o link.");
+        }
         corpo.put("aguardandoConfirmacao", true);
+        corpo.put("emailEnviado", resultadoRegistro.emailEnviado());
         if (exporLinkDev) {
-            corpo.put("linkConfirmacao", emailService.linkRegistro(token));
+            corpo.put("linkConfirmacao", emailService.linkRegistro(resultadoRegistro.token()));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(corpo);
     }

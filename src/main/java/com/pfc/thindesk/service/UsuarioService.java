@@ -50,7 +50,10 @@ public class UsuarioService implements UserDetailsService {
      * - devolve o token bruto (usado pelo RegistroController para o modo dev)
      */
     // Etapa 1 do cadastro público: cria usuário pendente e envia token por e-mail.
-    public String registrar(RegistroRequest req) {
+    public record ResultadoRegistro(String token, boolean emailEnviado) {
+    }
+
+    public ResultadoRegistro registrar(RegistroRequest req) {
         String username = com.pfc.thindesk.util.NomeUsuario.normalizar(req.username);
         String email = req.email.trim().toLowerCase(); // email sempre em minúsculas
 
@@ -72,8 +75,8 @@ public class UsuarioService implements UserDetailsService {
         usuarioRepository.save(usuario);
 
         String token = emailTokenService.gerar(username, TipoToken.REGISTRO);
-        emailService.enviarTokenRegistro(email, token);
-        return token;
+        boolean enviado = emailService.enviarTokenRegistro(email, token);
+        return new ResultadoRegistro(token, enviado);
     }
 
     /**

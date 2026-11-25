@@ -172,10 +172,17 @@ public class AuthController {
             }
 
             String token = emailTokenService.gerar(usuario.getUsername(), TipoToken.LOGIN); // 15 min, uso único
-            emailService.enviarTokenConfirmacao(email, token);
+            boolean enviado = emailService.enviarTokenConfirmacao(email, token);
 
             puzzleService.limpar(usuario); // puzzle concluído
             response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString()); // preAuth cumpriu seu papel
+
+            if (!enviado) {
+                // não fingir que o email saiu: o link é inútil sem ele; o usuário refaz o login
+                emailTokenService.invalidar(usuario.getUsername(), TipoToken.LOGIN);
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(mapa(
+                        "erro", "Não foi possível enviar o email de confirmação agora. Tente entrar novamente em instantes."));
+            }
 
             Map<String, Object> corpo = mapa(
                     "mensagem", "Puzzle resolvido! Enviamos um link de confirmação para o seu email.",
