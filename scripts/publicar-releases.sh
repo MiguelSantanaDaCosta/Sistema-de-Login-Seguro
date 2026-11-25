@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSOES=("1.0.0-alpha" "1.0.0-beta" "1.0.0-beta.2" "1.0.0-beta.3")   # da mais antiga para a mais nova
+VERSOES=("1.0.0-alpha" "1.0.0-beta" "1.0.0-beta.2" "1.0.0-beta.3" "1.0.0-beta.4")   # da mais antiga para a mais nova
 
 for v in "${VERSOES[@]}"; do
   tag="v$v"

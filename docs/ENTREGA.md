@@ -2,7 +2,7 @@
 
 **Aluno:** Miguel Santana da Costa
 **Atividade:** Software corporativo — controle de chamados técnicos (Thindesk)
-**Versão entregue:** `1.0.0-beta.3`
+**Versão entregue:** `1.0.0-beta.4`
 
 ---
 
@@ -41,7 +41,7 @@ As contas demo não estão fixas no código: um administrador as gerencia na tel
 
 ## 3. Versionamento
 
-**Versão atual: `1.0.0-beta.3`**
+**Versão atual: `1.0.0-beta.4`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/), no formato:
 
@@ -69,6 +69,7 @@ As notas de cada versão estão em `docs/releases/` e o passo a passo de publica
 | `1.0.0-beta` | Integração com o microserviço de chamados, telas de chamados, dashboard, perfis por dificuldade de puzzle, proteção anti-bot e deploy com HTTPS |
 | `1.0.0-beta.2` | Hierarquia única de papéis (Thindesk e microserviço alinhados) e contas demo por perfil gerenciadas por administradores |
 | `1.0.0-beta.3` | Desafios de promoção (cavalo verde → Técnico, torre azul → Administrador) e nome de usuário com acentos |
+| `1.0.0-beta.4` | Esqueci minha senha, botão de olho nas senhas e envio de email que não finge sucesso |
 
 ---
 
@@ -112,6 +113,7 @@ Os dados dos chamados vêm do microserviço `ms-chamados`.
 ### Autenticação e segurança
 - **Login em 3 fatores:** senha (BCrypt) → puzzle de xadrez → link de confirmação enviado ao email do próprio usuário.
 - **Sessão** em JWT dentro de cookie `HttpOnly`.
+- **Recuperação de senha:** "Esqueci minha senha" por link de uso único enviado ao email, e botão de olho para conferir a senha digitada (login, cadastro e redefinição).
 - **Perfil inicial único e promoção por desafios:** todo cadastro começa como `USUARIO`; ícones no canto da tela levam ao **Desafio do Cavalo Verde** (3 puzzles, rating 1900–2600 → Técnico) e ao **Desafio da Torre Azul** (5 puzzles, rating 2600–3000 → Administrador), ambos em 5 minutos e com a mesma proteção anti-bot da Rainha Vermelha.
 - **Perfis em hierarquia:** `ROOT › ADMIN › TECNICO › USUARIO` (`ROOT` é um recurso opcional, desligado por padrão), aplicada igualmente no Thindesk e no microserviço. A dificuldade do puzzle aumenta conforme o perfil.
 - **Autorização em duas camadas:** regras de rota (`SecurityConfig`) e `@PreAuthorize` nos controllers.

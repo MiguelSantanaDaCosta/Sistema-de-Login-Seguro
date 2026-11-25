@@ -4,6 +4,26 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto adota o
 [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) (`MAJOR.MINOR.PATCH[-PRÉ-RELEASE]`).
 
+## [1.0.0-beta.4] - 2026-11-25
+
+### Adicionado
+- **Esqueci minha senha:** link na tela de login → `/esqueci-senha` pede o email e envia um link de uso único
+  (válido por 30 minutos) para `/redefinir-senha`, onde se cria a nova senha (com confirmação). A resposta é sempre a
+  mesma exista ou não a conta, o envio sai em segundo plano (sem vazar pelo tempo de resposta) e há intervalo mínimo
+  de 60 s entre emails da mesma conta e limite de pedidos por IP. Depois da troca, o link é invalidado, o puzzle em
+  andamento e os links de login antigos são descartados e o dono recebe um aviso por email.
+- **Reenvio da confirmação de cadastro:** quem nunca confirmou o email recebe o link de confirmação ao usar
+  "Esqueci minha senha" (antes ficava preso com "Credenciais inválidas").
+- **Botão de olho** (mostrar/ocultar senha) no login, no cadastro e na redefinição.
+
+### Corrigido
+- O envio de email **não finge mais sucesso**: se o SMTP falhar, o cadastro avisa que o email não saiu e indica o
+  "Esqueci minha senha"; o login (após o puzzle) responde 503 com orientação em vez de dizer que o link foi enviado.
+- O email passa a sair com remetente definido (`Thindesk <usuário SMTP>`).
+
+### Alterado
+- Novo tipo de token `REDEFINICAO` e novo campo `criadoEm` nos tokens de email.
+
 ## [1.0.0-beta.3] - 2026-11-25
 
 ### Adicionado

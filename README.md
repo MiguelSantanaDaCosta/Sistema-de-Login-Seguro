@@ -33,7 +33,7 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 ## 🎯 Visão Geral
 
 - **Cadastro público** em 2 etapas: cria usuário `PENDENTE` → envia link de confirmação por email → ativa a conta.
-- **Login em 3 fatores:** senha (BCrypt) → **puzzle de xadrez** → **link enviado ao email do próprio usuário**.
+- **Login em 3 fatores:** senha (BCrypt) → **puzzle de xadrez** → **link enviado ao email do próprio usuário**, com botão de olho para conferir a senha digitada e **"Esqueci minha senha"** por link de uso único.
 - **Perfil inicial único:** todo cadastro começa como `USUARIO` (abre e acompanha chamados); o perfil evolui por **desafios de xadrez** ou por um administrador.
 - **4 perfis:** `ROLE_USUARIO`, `ROLE_TECNICO`, `ROLE_ADMIN` e `ROLE_ROOT` (este só se obtém vencendo o desafio da rainha vermelha — ver [Perfis](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)).
 - **Dificuldade do puzzle por perfil** (rating do Lichess crescente de usuário a admin).
@@ -134,6 +134,23 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 [POST /api/auth/logout] → limpa os dois cookies (thindesk_auth e thindesk_pre)
 ```
 
+### Esqueci minha senha
+
+```
+[GET  /esqueci-senha]            página: o usuário digita o email
+[POST /api/auth/esqueci-senha]   SEMPRE responde igual ("se existir uma conta, enviamos um link")
+    ├─ conta com email confirmado e ativa ─► token REDEFINICAO (uso único, 30 min) ─► email com /redefinir-senha?token=...
+    ├─ cadastro nunca confirmado ───────────► reenvia o link de CONFIRMAÇÃO do cadastro
+    └─ demo / root / desativada / sem conta ─► nada é enviado (mesma resposta)
+[GET  /redefinir-senha?token=]   página: nova senha + confirmação (botão de olho nos dois campos)
+[POST /api/auth/redefinir-senha] consome o token, grava a senha (BCrypt), zera o puzzle em andamento,
+                                 invalida links de login antigos e avisa o dono por email
+```
+
+Proteções: resposta idêntica para qualquer email (não revela quem tem conta); o email sai em segundo plano (o tempo de resposta não denuncia nada); no máximo 1 email por conta a cada 60 s e 15 pedidos por IP em 10 min; o token é guardado só como hash SHA-256 e vale uma vez. O login continua em 3 fatores depois da troca de senha. Validade configurável em `TOKEN_REDEFINICAO_MINUTOS`.
+
+**Email que falha:** o sistema não finge que enviou. Se o SMTP falhar, o cadastro avisa que o email não saiu (e orienta a usar "Esqueci minha senha") e o login responde 503 pedindo para tentar de novo.
+
 ### Variações do login e evolução de perfil
 
 - **Todo cadastro começa como `USUARIO`.** O perfil evolui pelos **desafios de promoção** (cavalo verde → `TECNICO`, torre azul → `ADMIN`) ou por um administrador em `/admin/usuarios`.
@@ -176,6 +193,7 @@ PUZZLE_MAX_POR_SESSAO=3
 ROOT_ENABLED=false        # rainha vermelha / perfil root (CUIDADO: acesso total ao banco)
 DESAFIO_CAVALO_ENABLED=false  # cavalo verde: 3 puzzles 1900-2600 -> vira Técnico
 DESAFIO_TORRE_ENABLED=false   # torre azul: 5 puzzles 2600-3000 -> vira Administrador
+TOKEN_REDEFINICAO_MINUTOS=30  # validade do link de "esqueci minha senha"
 DEMO_ENABLED=false        # contas demo criadas por um ADMIN em /admin/demos
 ANALISE_ENABLED=false     # cruzamento dos puzzles com partidas do Lichess
 BOT_PROTECAO=true         # bloqueio de IP por 1h (418) no desafio root
@@ -630,6 +648,7 @@ src/main/java/com/pfc/
 └── thindesk/
     ├── controller/
     │   ├── HomeController · AuthController (login em 3 fatores) · RegistroController · ConfirmacaoController
+    │   ├── SenhaController              ← esqueci minha senha / redefinir senha
     │   ├── DashboardController          ← "/" (indicadores, fila e análise do Lichess)
     │   ├── MeusChamadosController       ← /chamados (abrir e acompanhar)
     │   ├── TecnicoController            ← /tecnico/** (fila e resolução)
@@ -655,8 +674,8 @@ src/main/java/com/pfc/
 src/main/resources/
 ├── application.properties               ← parametrizado por ${ENV_VAR}
 ├── puzzles_lichess.csv · puzzles_lichess_elite.csv
-├── static/ (css, js: puzzle-modal.js, root-desafio.js)
-└── templates/  layout · login · registrar · dashboard
+├── static/ (css, js: puzzle-modal.js, root-desafio.js, senha-toggle.js)
+└── templates/  layout · login · registrar · esqueci-senha · redefinir-senha · dashboard
     ├── chamados/ (novo) · chamados.html · tecnico/chamados.html
     ├── admin/ (usuarios, demos) · root/desafio.html
     └── fragments/ (sidebar, rainha)
@@ -690,6 +709,8 @@ Raiz: Dockerfile · docker-compose.yml · Caddyfile · CHANGELOG.md · docs/ (EN
 | 16  | Contas demo criadas por um ADMIN, não no código     | Nenhuma credencial fixa no repositório; ROOT nunca pode ser demo.   |
 | 17  | Nome de usuário só com letras **latinas** acentuadas | Evita nomes visualmente idênticos aos de outras pessoas (homógrafos). |
 | 18  | Chamados em microserviço próprio, validando o mesmo JWT | Domínio separado da autenticação; identidade e papéis viajam no token. |
+| 19  | "Esqueci minha senha" com resposta idêntica e envio assíncrono | Não revela quais emails têm conta, nem pela latência da resposta. |
+| 20  | Envio de email devolve sucesso/falha ao chamador          | O usuário nunca é informado de um email que não saiu.              |
 
 ---
 
@@ -1057,7 +1078,7 @@ O IP vem da conexão (nunca de header do cliente) e o bloqueio também é marcad
 
 ## 🏷️ Versionamento
 
-**Versão atual: `1.0.0-beta.3`**
+**Versão atual: `1.0.0-beta.4`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) no formato:
 
@@ -1093,6 +1114,7 @@ git push origin main --tags                        # 3) publicar commits e tags
 | `1.0.0-beta` | Integração com o microserviço de chamados técnicos, telas de chamados (cliente/técnico) e deploy |
 | `1.0.0-beta.2` | Hierarquia única de papéis alinhada ao microserviço e contas demo gerenciadas por administradores |
 | `1.0.0-beta.3` | Desafios de promoção (cavalo verde → Técnico, torre azul → Administrador) e nome de usuário com acentos |
+| `1.0.0-beta.4` | Esqueci minha senha, botão de olho nas senhas e envio de email que não finge sucesso |
 
 ---
 
