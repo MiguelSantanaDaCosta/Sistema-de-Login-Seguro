@@ -2,21 +2,36 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-  <!-- Rainha vermelha: canto da tela. Anônimo -> desafio; ROOT -> painel do banco. -->
-  <div th:fragment="rainha" th:if="${@rootProps.habilitado}">
-    <a sec:authorize="hasRole('ROOT')" th:href="@{/root}" class="rainha-root ativa"
-       title="Painel root">&#9819;</a>
-    <a sec:authorize="!hasRole('ROOT')" th:href="@{/root/desafio}" class="rainha-root"
-       title="Você ousa?">&#9819;</a>
+  <!-- Ícones de desafio, no canto da tela:
+       rainha vermelha (anônimo -> desafio; ROOT -> painel), cavalo verde (promove a TÉCNICO) e
+       torre azul (promove a ADMIN). Cavalo e torre só aparecem logado, e só para quem ainda está abaixo do perfil. -->
+  <div th:fragment="rainha">
+    <a th:if="${@rootProps.habilitado}" sec:authorize="hasRole('ROOT')" th:href="@{/root}"
+       class="icone-desafio rainha ativa" title="Painel root">&#9819;</a>
+    <a th:if="${@rootProps.habilitado}" sec:authorize="!hasRole('ROOT')" th:href="@{/root/desafio}"
+       class="icone-desafio rainha" title="Desafio da Rainha Vermelha — você ousa?">&#9819;</a>
+
+    <a th:if="${@rootProps.cavaloHabilitado}" sec:authorize="isAuthenticated() and !hasRole('TECNICO')"
+       th:href="@{/desafio/cavalo}" class="icone-desafio cavalo"
+       title="Desafio do Cavalo Verde — vire Técnico">&#9822;</a>
+    <a th:if="${@rootProps.torreHabilitada}" sec:authorize="isAuthenticated() and !hasRole('ADMIN')"
+       th:href="@{/desafio/torre}" class="icone-desafio torre"
+       title="Desafio da Torre Azul — vire Administrador">&#9820;</a>
+
     <style>
-      .rainha-root {
-        position: fixed; right: 18px; bottom: 14px; z-index: 2000;
+      .icone-desafio {
+        position: fixed; bottom: 14px; z-index: 2000;
         font-size: 2.6rem; line-height: 1; text-decoration: none;
-        color: #d11a2a; text-shadow: 0 0 6px rgba(209, 26, 42, 0.6);
-        opacity: 0.55; transition: opacity .2s, transform .2s;
+        opacity: 0.6; transition: opacity .2s, transform .2s;
       }
-      .rainha-root:hover { opacity: 1; transform: scale(1.15) rotate(-6deg); color: #ff2b3d; }
-      .rainha-root.ativa { opacity: 1; animation: rainha-pulso 1.6s infinite; }
+      .icone-desafio:hover { opacity: 1; transform: scale(1.15) rotate(-6deg); }
+      .icone-desafio.rainha { right: 18px; color: #d11a2a; text-shadow: 0 0 6px rgba(209, 26, 42, 0.6); }
+      .icone-desafio.rainha:hover { color: #ff2b3d; }
+      .icone-desafio.rainha.ativa { opacity: 1; animation: rainha-pulso 1.6s infinite; }
+      .icone-desafio.cavalo { right: 78px; color: #27ae60; text-shadow: 0 0 6px rgba(39, 174, 96, 0.6); }
+      .icone-desafio.cavalo:hover { color: #2ecc71; }
+      .icone-desafio.torre { right: 138px; color: #2f6fe0; text-shadow: 0 0 6px rgba(47, 111, 224, 0.6); }
+      .icone-desafio.torre:hover { color: #3b82f6; }
       @keyframes rainha-pulso { 50% { text-shadow: 0 0 16px #ff2b3d; } }
     </style>
   </div>

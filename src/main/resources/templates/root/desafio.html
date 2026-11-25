@@ -3,38 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>A Rainha Vermelha</title>
+    <title th:text="${titulo}">Desafio</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css" />
     <link rel="stylesheet" th:href="@{/css/puzzle-modal.css}" />
     <style>
-      body { background: #1a0709; color: #f3d9dc; }
-      .rainha-titulo { color: #ff2b3d; text-shadow: 0 0 10px rgba(255,43,61,.5); }
+      body { background: #14161a; color: #e8e8ea; }
+      .desafio-titulo { color: var(--cor); text-shadow: 0 0 10px color-mix(in srgb, var(--cor) 50%, transparent); }
       #board-wrap { max-width: 420px; width: 100%; margin: 0 auto; }
       .tempo { font-variant-numeric: tabular-nums; font-size: 1.6rem; font-weight: 700; }
       .tempo.urgente { color: #ff8a80; }
-      .passos span { display:inline-block; width:14px; height:14px; margin:0 3px; border-radius:50%; background:#4a2025; }
-      .passos span.ok { background:#ff2b3d; }
-      .passos span.atual { box-shadow: 0 0 0 3px #ff2b3d55; background:#9b1c28; }
+      .passos span { display:inline-block; width:14px; height:14px; margin:0 3px; border-radius:50%; background:#3a3d44; }
+      .passos span.ok { background: var(--cor); }
+      .passos span.atual { box-shadow: 0 0 0 3px color-mix(in srgb, var(--cor) 40%, transparent); background: color-mix(in srgb, var(--cor) 60%, #000); }
+      .btn-desafio { background: var(--cor); border-color: var(--cor); color: #111; font-weight: 600; }
+      .btn-desafio:hover { filter: brightness(1.1); color: #111; }
     </style>
   </head>
-  <body>
+  <body th:style="'--cor:' + ${cor}" th:attr="data-base=${apiBase},data-sucesso=${urlSucesso}">
     <div class="container py-4 text-center">
-      <h1 class="rainha-titulo">&#9819; A Rainha Vermelha</h1>
+      <h1 class="desafio-titulo"><span th:utext="${icone}">&#9819;</span> <span th:text="${titulo}">Desafio</span></h1>
       <p class="mb-1">
-        Resolva <b th:text="${@rootProps.puzzles}">5</b> puzzles <b>seguidos</b> em
-        <b th:text="${@rootProps.tempoSegundos / 60}">5</b> min, sem errar nenhum.
-        Só os de maior rating do banco.
+        Resolva <b th:text="${nPuzzles}">5</b> puzzles <b>seguidos</b> em
+        <b th:text="${minutos}">5</b> min, sem errar nenhum.
+        <span th:if="${ratingMax != null}">Rating de <b th:text="${ratingMin}">1900</b> a <b th:text="${ratingMax}">2600</b>.</span>
+        <span th:if="${ratingMax == null}">Só os de maior rating do banco (≥ <b th:text="${ratingMin}">3000</b>).</span>
+      </p>
+      <p class="mb-1" th:if="${concede != null}">
+        Ao vencer, o seu perfil vira <b th:text="${concede}">Técnico</b>.
       </p>
       <p class="small text-secondary">Errou um lance? Tudo recomeça.</p>
+
+      <div th:if="${bloqueio != null}" class="alert alert-warning d-inline-block" th:text="${bloqueio}"></div>
 
       <!-- isca para bots: humano não vê nem preenche -->
       <input type="text" id="website" name="website" tabindex="-1" autocomplete="off"
              aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0" />
 
       <div id="inicio">
-        <button id="btn-iniciar" class="btn btn-danger btn-lg">Aceitar o desafio</button>
-        <div><a th:href="@{/login}" class="btn btn-link text-secondary mt-3">Voltar ao login</a></div>
+        <button id="btn-iniciar" class="btn btn-desafio btn-lg" th:if="${bloqueio == null}">Aceitar o desafio</button>
+        <div><a th:href="@{${concede != null ? '/' : '/login'}}" class="btn btn-link text-secondary mt-3"
+                th:text="${concede != null} ? 'Voltar ao sistema' : 'Voltar ao login'">Voltar</a></div>
       </div>
 
       <div id="jogo" style="display:none">
@@ -47,7 +56,7 @@
         <div class="passos mb-2" id="passos"></div>
         <div id="board-wrap"><div id="board"></div></div>
         <div id="msg" class="mt-3 fw-bold"></div>
-        <button id="btn-reiniciar" class="btn btn-outline-danger mt-2" style="display:none">Tentar de novo</button>
+        <button id="btn-reiniciar" class="btn btn-outline-light mt-2" style="display:none">Tentar de novo</button>
       </div>
     </div>
 

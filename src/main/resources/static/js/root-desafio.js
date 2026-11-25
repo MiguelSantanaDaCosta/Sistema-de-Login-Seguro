@@ -2,6 +2,9 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id);
+  // a mesma página serve à rainha, ao cavalo e à torre: a API e o destino vêm do <body>
+  const BASE = document.body.dataset.base || "/api/root/desafio";
+  const SUCESSO = document.body.dataset.sucesso || "/root";
   let game = new Chess();
   let board = null;
   let puzzle = null;
@@ -21,13 +24,13 @@
   // 418: IP bloqueado — troca a página pelo bule
   function bule() {
     document.body.innerHTML =
-      '<div style="text-align:center;margin-top:20vh;color:#f3d9dc"><h1>Eu sou um bule de chá</h1><p style="font-size:4rem">&#9749;</p></div>';
+      '<div style="text-align:center;margin-top:20vh;color:#e8e8ea"><h1>Eu sou um bule de chá</h1><p style="font-size:4rem">&#9749;</p></div>';
   }
 
   function msg(texto, cor) {
     const el = $("msg");
     el.textContent = texto;
-    el.style.color = cor || "#f3d9dc";
+    el.style.color = cor || "#e8e8ea";
   }
 
   function passos(atual, total) {
@@ -48,7 +51,7 @@
       $("tempo").classList.toggle("urgente", rest <= 30);
       if (rest === 0) {
         pararTimer();
-        falhou("O tempo acabou. A rainha vermelha não perdoa.");
+        falhou("O tempo acabou.");
       }
     };
     tick();
@@ -96,9 +99,9 @@
         onSnapEnd: () => board.position(game.fen()),
       });
     }
-    msg("Invocando a rainha...");
+    msg("Preparando o desafio...");
     try {
-      const resp = await fetch("/api/root/desafio/iniciar", { method: "POST", body: sinais() });
+      const resp = await fetch(BASE + "/iniciar", { method: "POST", body: sinais() });
       if (resp.status === 418) { bule(); return; }
       const d = await resp.json();
       if (!resp.ok) { falhou(d.erro || "Erro ao iniciar."); return; }
@@ -119,7 +122,7 @@
   async function enviar(uci) {
     msg("Verificando...");
     try {
-      const resp = await fetch("/api/root/desafio/lance", {
+      const resp = await fetch(BASE + "/lance", {
         method: "POST",
         body: sinais({ lanceFen: uci }),
       });
@@ -129,7 +132,7 @@
         pararTimer();
         travado = true;
         msg(d.mensagem, "#7CFC9A");
-        setTimeout(() => (window.location = "/root"), 1200);
+        setTimeout(() => (window.location = d.redirect || SUCESSO), 1500);
         return;
       }
       if (resp.ok) { // acertou, próximo puzzle

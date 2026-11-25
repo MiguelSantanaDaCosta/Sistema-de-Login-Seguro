@@ -26,7 +26,8 @@ public class DashboardController {
     private com.pfc.thindesk.analise.PuzzleAnaliseService analiseService;
 
     @GetMapping("/")
-    public String dashboard(Model model, Authentication auth) {
+    public String dashboard(Model model, Authentication auth,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String promovido) {
         boolean tecnico = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_TECNICO") || a.getAuthority().equals("ROLE_ADMIN"));
 
@@ -58,6 +59,12 @@ public class DashboardController {
         model.addAttribute("fila", fila.stream().limit(5).toList());
         model.addAttribute("filaTotal", fila.size());
         model.addAttribute("erro", erro);
+        // aviso após vencer um desafio de promoção (cavalo -> tecnico, torre -> admin)
+        model.addAttribute("promovido", switch (promovido == null ? "" : promovido) {
+            case "tecnico" -> "Técnico";
+            case "admin" -> "Administrador";
+            default -> null;
+        });
         model.addAttribute("analise", analiseService.resumo());
         model.addAttribute("content", "dashboard :: content");
         return "layout";

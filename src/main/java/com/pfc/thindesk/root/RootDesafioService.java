@@ -3,6 +3,7 @@ package com.pfc.thindesk.root;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,8 +17,8 @@ import com.pfc.thindesk.repository.PuzzleXadrezRepository;
 import com.pfc.thindesk.repository.RootDesafioRepository;
 
 /**
- * Desafio da rainha vermelha: N puzzles SEGUIDOS (sem errar) dentro do tempo total,
- * sorteados entre os 50 de maior rating do banco. Todo o estado fica no servidor.
+ * Desafios de xadrez (rainha, cavalo e torre): N puzzles SEGUIDOS (sem errar) dentro do tempo total,
+ * sorteados numa faixa de rating por tipo. Todo o estado fica no servidor.
  */
 @Service
 public class RootDesafioService {
@@ -36,22 +37,26 @@ public class RootDesafioService {
     @Autowired
     private RootProps props;
 
-    public Resposta iniciar() {
-        List<PuzzleXadrez> elite = elite();
-        if (elite.size() < props.getPuzzles()) {
+    /** Começa uma tentativa. usuario = dono nos desafios de promoção; null na rainha (anônimo). */
+    public Resposta iniciar(TipoDesafio tipo, String usuario) {
+        List<PuzzleXadrez> pool = pool(tipo);
+        if (pool.size() < props.puzzles(tipo)) {
             return new Resposta(500, mapa("erro", "Puzzles insuficientes no banco para o desafio."), false, null);
         }
         RootDesafio d = new RootDesafio();
         d.setId(UUID.randomUUID().toString());
-        d.setExpiraEm(System.currentTimeMillis() + props.getTempoSegundos() * 1000L);
-        PuzzleXadrez primeiro = sortear(d, elite);
+        d.setTipo(tipo.name());
+        d.setUsuario(usuario);
+        d.setExpiraEm(System.currentTimeMillis() + props.tempo(tipo) * 1000L);
+        PuzzleXadrez primeiro = sortear(d, pool);
         repo.save(d);
-        return new Resposta(200, dados(d, primeiro), false, d.getId());
+        return new Resposta(200, dados(tipo, d, primeiro), false, d.getId());
     }
 
-    public Resposta responder(String desafioId, String lance) {
+    public Resposta responder(TipoDesafio tipo, String usuario, String desafioId, String lance) {
         Optional<RootDesafio> opt = desafioId == null ? Optional.empty() : repo.findById(desafioId);
-        if (opt.isEmpty()) {
+        // o id só vale para o mesmo tipo de desafio e para o mesmo usuário que o iniciou
+        if (opt.isEmpty() || !tipo.name().equals(opt.get().getTipo()) || !Objects.equals(usuario, opt.get().getUsuario())) {
             return new Resposta(409, mapa("erro", "Nenhum desafio ativo. Comece novamente.", "reiniciar", true),
                     false, null);
         }
@@ -59,11 +64,10 @@ public class RootDesafioService {
 
         if (System.currentTimeMillis() > d.getExpiraEm()) {
             repo.delete(d);
-            return new Resposta(410, mapa("erro", "O tempo acabou. A rainha vermelha não perdoa.", "reiniciar", true),
-                    false, null);
+            return new Resposta(410, mapa("erro", "O tempo acabou.", "reiniciar", true), false, null);
         }
 
-        // Humano nenhum resolve puzzle de 3000 em segundos: resposta antes do mínimo = bot/engine
+        // Humano nenhum resolve puzzle de rating alto em poucos segundos: resposta antes do mínimo = bot/engine
         long minMs = props.getMinSegundosPorPuzzle() * 1000L;
         if (minMs > 0 && System.currentTimeMillis() - d.getPuzzleEmitidoEm() < minMs) {
             repo.delete(d);
@@ -81,26 +85,30 @@ public class RootDesafioService {
         }
 
         d.setResolvidos(d.getResolvidos() + 1);
-        if (d.getResolvidos() >= props.getPuzzles()) {
+        if (d.getResolvidos() >= props.puzzles(tipo)) {
             repo.delete(d);
-            return new Resposta(200, mapa("concluido", true, "mensagem", "A rainha vermelha se curva. Bem-vindo, root."),
-                    true, null);
+            return new Resposta(200, mapa("concluido", true), true, null);
         }
 
-        PuzzleXadrez proximo = sortear(d, elite());
+        PuzzleXadrez proximo = sortear(d, pool(tipo));
         repo.save(d);
-        return new Resposta(200, dados(d, proximo), false, d.getId());
+        return new Resposta(200, dados(tipo, d, proximo), false, d.getId());
     }
 
-    // Puzzles de elite (rating >= mínimo do root); se o banco tiver poucos, cai para os 50 mais altos
-    private List<PuzzleXadrez> elite() {
-        List<PuzzleXadrez> lista = puzzles.findByRatingGreaterThanEqual(props.getRatingMin());
-        return lista.size() >= props.getPuzzles() ? lista : puzzles.findTop50ByOrderByRatingDesc();
+    // Puzzles do desafio. Rainha: rating >= mínimo (se o banco tiver poucos, cai para os 50 mais altos).
+    // Cavalo e torre: faixa [mínimo, máximo].
+    private List<PuzzleXadrez> pool(TipoDesafio tipo) {
+        Integer max = props.max(tipo);
+        if (max != null) {
+            return puzzles.findByRatingBetween(props.min(tipo), max);
+        }
+        List<PuzzleXadrez> lista = puzzles.findByRatingGreaterThanEqual(props.min(tipo));
+        return lista.size() >= props.puzzles(tipo) ? lista : puzzles.findTop50ByOrderByRatingDesc();
     }
 
     // Sorteia um puzzle ainda não usado nesta tentativa
-    private PuzzleXadrez sortear(RootDesafio d, List<PuzzleXadrez> elite) {
-        List<PuzzleXadrez> livres = elite.stream().filter(p -> !d.getUsados().contains(p.getId())).toList();
+    private PuzzleXadrez sortear(RootDesafio d, List<PuzzleXadrez> pool) {
+        List<PuzzleXadrez> livres = pool.stream().filter(p -> !d.getUsados().contains(p.getId())).toList();
         PuzzleXadrez p = livres.get(ThreadLocalRandom.current().nextInt(livres.size()));
         d.getUsados().add(p.getId());
         d.setPuzzleAtualId(p.getId());
@@ -108,16 +116,16 @@ public class RootDesafioService {
         return p;
     }
 
-    private Map<String, Object> dados(RootDesafio d, PuzzleXadrez p) {
+    private Map<String, Object> dados(TipoDesafio tipo, RootDesafio d, PuzzleXadrez p) {
         long restanteMs = Math.max(0, d.getExpiraEm() - System.currentTimeMillis());
         return mapa(
                 "fen", p.getFen(),
                 "vez", "b".equals(p.getFen().split(" ")[1]) ? "pretas" : "brancas",
                 "rating", p.getRating(),
                 "puzzleNumero", d.getResolvidos() + 1,
-                "puzzlesTotal", props.getPuzzles(),
+                "puzzlesTotal", props.puzzles(tipo),
                 "expiraEmSegundos", (restanteMs + 999) / 1000,
-                "tempoTotalSegundos", props.getTempoSegundos());
+                "tempoTotalSegundos", props.tempo(tipo));
     }
 
     private static Map<String, Object> mapa(Object... pares) {

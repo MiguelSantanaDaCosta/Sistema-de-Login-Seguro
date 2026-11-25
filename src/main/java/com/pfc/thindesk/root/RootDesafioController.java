@@ -60,7 +60,7 @@ public class RootDesafioController {
             return null; // resposta 418 já escrita
         }
         guard.emitirCookieVisita(request, response); // prova de que o cliente passou pela página
-        return new ModelAndView("root/desafio");
+        return new ModelAndView("root/desafio").addAllObjects(PromocaoController.visao(TipoDesafio.RAINHA, props, null));
     }
 
     @PostMapping("/api/root/desafio/iniciar")
@@ -77,9 +77,9 @@ public class RootDesafioController {
             guard.bloquear(request, response, motivo);
             return null;
         }
-        RootDesafioService.Resposta r = service.iniciar();
+        RootDesafioService.Resposta r = service.iniciar(TipoDesafio.RAINHA, null);
         if (r.desafioId() != null) {
-            response.addHeader(HttpHeaders.SET_COOKIE, cookieDesafio(r.desafioId(), props.getTempoSegundos() + 60).toString());
+            response.addHeader(HttpHeaders.SET_COOKIE, cookieDesafio(r.desafioId(), props.tempo(TipoDesafio.RAINHA) + 60).toString());
         }
         return ResponseEntity.status(r.http()).body(r.corpo());
     }
@@ -97,7 +97,7 @@ public class RootDesafioController {
             guard.bloquear(request, response, motivo);
             return null;
         }
-        RootDesafioService.Resposta r = service.responder(desafioId, lanceFen);
+        RootDesafioService.Resposta r = service.responder(TipoDesafio.RAINHA, null, desafioId, lanceFen);
         if (r.bot()) {
             guard.bloquear(request, response, "resposta rápida demais (< " + props.getMinSegundosPorPuzzle()
                     + "s) em puzzle de rating alto");
@@ -105,6 +105,8 @@ public class RootDesafioController {
         }
 
         if (r.concluido()) {
+            r = new RootDesafioService.Resposta(200, java.util.Map.of("concluido", true,
+                    "mensagem", "A rainha vermelha se curva. Bem-vindo, root.", "redirect", "/root"), true, null);
             Usuario root = usuarioRepository.findByUsername("root")
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Usuário root ausente"));
             List<String> roles = Role.nomesEfetivos(root.getRoles());
@@ -125,7 +127,7 @@ public class RootDesafioController {
     }
 
     private void exigirHabilitado() {
-        if (!props.isHabilitado()) {
+        if (!props.habilitado(TipoDesafio.RAINHA)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
     }

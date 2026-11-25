@@ -18,6 +18,12 @@ public class RootDesafio {
     @Id
     private String id;
 
+    /** Qual desafio é (RAINHA, CAVALO ou TORRE); o id de um tipo não vale em outro. */
+    private String tipo;
+
+    /** Dono da tentativa nos desafios de promoção (null no desafio da rainha, que é anônimo). */
+    private String usuario;
+
     /** Id do puzzle que deve ser resolvido agora. */
     private String puzzleAtualId;
 
