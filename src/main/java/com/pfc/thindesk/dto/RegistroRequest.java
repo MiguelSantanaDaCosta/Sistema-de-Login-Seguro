@@ -14,8 +14,8 @@ public class RegistroRequest {
 
     @NotBlank(message = "O nome de usuário é obrigatório.")
     @Size(min = 3, max = 30, message = "O nome de usuário deve ter entre 3 e 30 caracteres.")
-    @Pattern(regexp = "^[A-Za-z0-9._-]*$",
-             message = "O nome de usuário só pode ter letras, números, ponto, hífen e sublinhado.")
+    @Pattern(regexp = com.pfc.thindesk.util.NomeUsuario.REGEX,
+             message = "Nome de usuário inválido: 3 a 30 caracteres com letras (com acento), números, espaço entre palavras e . _ - @ +")
     public String username;
 
     @NotBlank(message = "O email é obrigatório.")

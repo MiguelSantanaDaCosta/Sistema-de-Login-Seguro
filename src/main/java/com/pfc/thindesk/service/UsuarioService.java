@@ -51,7 +51,7 @@ public class UsuarioService implements UserDetailsService {
      */
     // Etapa 1 do cadastro público: cria usuário pendente e envia token por e-mail.
     public String registrar(RegistroRequest req) {
-        String username = req.username.trim();
+        String username = com.pfc.thindesk.util.NomeUsuario.normalizar(req.username);
         String email = req.email.trim().toLowerCase(); // email sempre em minúsculas
 
         if (usuarioRepository.existsByUsername(username)) {

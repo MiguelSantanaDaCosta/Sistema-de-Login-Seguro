@@ -84,6 +84,8 @@ public class AuthController {
             @RequestParam String password,
             HttpServletResponse response) {
 
+        username = com.pfc.thindesk.util.NomeUsuario.normalizar(username);
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password));
 
