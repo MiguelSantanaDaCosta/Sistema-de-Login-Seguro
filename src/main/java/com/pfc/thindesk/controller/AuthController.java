@@ -92,7 +92,7 @@ public class AuthController {
 
         // Conta de demonstração pública: sem puzzle nem email, só com a senha (e só se habilitada)
         if (demoProps.isHabilitado() && usuario.isContaDemo()) {
-            java.util.List<String> roles = usuario.getRoles().stream().map(com.pfc.thindesk.entity.Role::name).toList();
+            java.util.List<String> roles = com.pfc.thindesk.entity.Role.nomesEfetivos(usuario.getRoles());
             String token = jwtUtil.gerarToken(usuario.getUsername(), false, roles);
             response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from("thindesk_auth", token)
                     .httpOnly(true).secure(false).path("/").sameSite("Lax")
@@ -153,7 +153,7 @@ public class AuthController {
         if (!esperado.isEmpty() && lance.equals(esperado)) {
             // Conta de demonstração "pula email": o puzzle é o último fator, o login termina aqui
             if (demoProps.isHabilitado() && usuario.isPulaEmail()) {
-                java.util.List<String> roles = usuario.getRoles().stream().map(com.pfc.thindesk.entity.Role::name).toList();
+                java.util.List<String> roles = com.pfc.thindesk.entity.Role.nomesEfetivos(usuario.getRoles());
                 String token = jwtUtil.gerarToken(usuario.getUsername(), false, roles);
                 puzzleService.limpar(usuario);
                 response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString());

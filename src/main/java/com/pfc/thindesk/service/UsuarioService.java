@@ -102,7 +102,8 @@ public class UsuarioService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
-        var authorities = usuario.getRoles().stream()
+        // Hierarquia: quem é ADMIN também tem TECNICO e USUARIO (e ROOT tem tudo)
+        var authorities = com.pfc.thindesk.entity.Role.expandir(usuario.getRoles()).stream()
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toList());
 

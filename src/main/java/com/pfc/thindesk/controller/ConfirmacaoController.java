@@ -91,7 +91,7 @@ public class ConfirmacaoController {
             log.warn("Link de LOGIN recusado: usuário '{}' não existe ou está inativo", dono.get());
             return "redirect:/login?erro=link-invalido";
         }
-        List<String> roles = usuario.get().getRoles().stream().map(Role::name).toList();
+        List<String> roles = Role.nomesEfetivos(usuario.get().getRoles());
         String finalToken = jwtUtil.gerarToken(usuario.get().getUsername(), false, roles);
         ResponseCookie auth = ResponseCookie.from(COOKIE_AUTH, finalToken)
                 .httpOnly(true)

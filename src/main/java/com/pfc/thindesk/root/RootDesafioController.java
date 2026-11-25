@@ -107,7 +107,7 @@ public class RootDesafioController {
         if (r.concluido()) {
             Usuario root = usuarioRepository.findByUsername("root")
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Usuário root ausente"));
-            List<String> roles = root.getRoles().stream().map(Role::name).toList();
+            List<String> roles = Role.nomesEfetivos(root.getRoles());
             String token = jwtUtil.gerarToken("root", false, roles);
             response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from(COOKIE_AUTH, token)
                     .httpOnly(true).secure(false).path("/").sameSite("Lax")
