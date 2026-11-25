@@ -31,6 +31,7 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 
 - **Cadastro público** em 2 etapas: cria usuário `PENDENTE` → envia link de confirmação por email → ativa a conta.
 - **Login em 3 fatores:** senha (BCrypt) → **puzzle de xadrez** → **link enviado ao email do próprio usuário**.
+- **Perfil inicial único:** todo cadastro começa como `USUARIO` (abre e acompanha chamados); o perfil evolui por **desafios de xadrez** ou por um administrador.
 - **4 perfis:** `ROLE_USUARIO`, `ROLE_TECNICO`, `ROLE_ADMIN` e `ROLE_ROOT` (este só se obtém vencendo o desafio da rainha vermelha — ver [Perfis](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)).
 - **Dificuldade do puzzle por perfil** (rating do Lichess crescente de usuário a admin).
 - **Chamados técnicos** (abrir, acompanhar, resolver) integrados ao microserviço `ms-chamados` por JWT com os papéis do usuário.
@@ -164,6 +165,8 @@ PUZZLE_MAX_POR_SESSAO=3
 
 # --- recursos opcionais (desligados por padrão) ---
 ROOT_ENABLED=false        # rainha vermelha / perfil root (CUIDADO: acesso total ao banco)
+DESAFIO_CAVALO_ENABLED=false  # cavalo verde: 3 puzzles 1900-2600 -> vira Técnico
+DESAFIO_TORRE_ENABLED=false   # torre azul: 5 puzzles 2600-3000 -> vira Administrador
 DEMO_ENABLED=false        # contas demo criadas por um ADMIN em /admin/demos
 ANALISE_ENABLED=false     # cruzamento dos puzzles com partidas do Lichess
 BOT_PROTECAO=true         # bloqueio de IP por 1h (418) no desafio root
@@ -984,9 +987,29 @@ Os papéis seguem **uma hierarquia única**, aplicada igualmente pelo Thindesk e
 
 > Verificado chamando o `ms-chamados` diretamente com tokens de cada perfil (abrir, listar próprios, listar de outro, buscar de outro, fila de abertos e resolver): todos os perfis respondem conforme a tabela.
 
+### Desafios de promoção (cavalo verde e torre azul)
+
+Todo usuário começa como `USUARIO`. Depois de entrar, ícones no canto da tela levam a desafios de xadrez que **promovem o perfil**:
+
+| Desafio | Ícone | Quem vê | Puzzles | Rating | Tempo | Resultado |
+| ------- | :---: | ------- | :-----: | :----: | :---: | --------- |
+| **Cavalo Verde** | ♞ verde | logado, abaixo de `TECNICO` | 3 seguidos | 1900 – 2600 | 5 min | perfil vira **Técnico** |
+| **Torre Azul** | ♜ azul | logado, abaixo de `ADMIN` | 5 seguidos | 2600 – 3000 | 5 min | perfil vira **Administrador** |
+| **Rainha Vermelha** | ♛ vermelho | qualquer pessoa (sem login) | 5 seguidos | ≥ 3000 | 5 min | sessão **root** |
+
+Regras comuns: os puzzles são **seguidos** (um lance errado reinicia tudo), o prazo vale para o desafio inteiro, o estado fica no servidor (o lance correto nunca vai ao navegador) e vale a **mesma proteção contra bots e IAs** da rainha (ver abaixo: automação bloqueia o IP por 1 hora com HTTP 418). **Contas de demonstração e usuários que já têm o perfil não participam**, e o desafio só aparece para quem ainda está abaixo do perfil que ele concede. A promoção vale na hora, sem novo login.
+
+Ligados por `DESAFIO_CAVALO_ENABLED` e `DESAFIO_TORRE_ENABLED` (desligados por padrão, pois concedem perfil de verdade).
+
+> ⚠️ Como a proteção é heurística, uma engine de xadrez conduzida por um navegador real pode vencer os desafios. Mantenha-os desligados onde o perfil `ADMIN` proteger dados reais.
+
+### Nome de usuário
+
+3 a 30 caracteres: **letras latinas com acento** (`joão`, `José`), números, espaço entre palavras e `. _ - @ +`. Letras de outros alfabetos (cirílico, grego…) são recusadas de propósito, porque têm formas idênticas às latinas e permitiriam um nome visualmente igual ao de outra pessoa. A acentuação é normalizada (NFC) no cadastro e no login. Caracteres como `/ ? # %` ficam de fora por quebrarem URLs.
+
 ### Rainha vermelha (`ROLE_ROOT`) — recurso "piada"
 
-Com `ROOT_ENABLED=true`, aparece uma rainha vermelha (♛) no canto da tela. Ela leva ao **desafio**: resolver **5 puzzles seguidos, sem errar, em 5 minutos**, todos com **rating ≥ 3000** (`puzzles_lichess_elite.csv`, ~1.9 mil puzzles). Quem vence recebe a sessão do usuário `root` **sem precisar de login** e ganha o **Painel root** (`/root`): navegar, inserir, editar e **excluir** qualquer documento dos bancos `thindesk` e `ms_chamados`, além de acesso a todos os endpoints.
+Com `ROOT_ENABLED=true`, aparece uma rainha vermelha (♛) no canto da tela. Ela leva ao **desafio**: resolver **5 puzzles seguidos, sem errar, em 5 minutos**, todos com **rating ≥ 3000** (`puzzles_lichess_elite.csv`, ~1,9 mil puzzles; o mesmo arquivo traz ~1,5 mil de rating 2600–2999 para a torre azul). Quem vence recebe a sessão do usuário `root` **sem precisar de login** e ganha o **Painel root** (`/root`): navegar, inserir, editar e **excluir** qualquer documento dos bancos `thindesk` e `ms_chamados`, além de acesso a todos os endpoints.
 
 - Todo o estado do desafio fica no servidor (coleção `root_desafios`, com expiração automática); o lance correto nunca vai ao navegador.
 - O perfil `ROOT` **não pode** ser atribuído pela tela de administração, e o usuário `root` não tem senha utilizável.
@@ -1013,7 +1036,7 @@ O IP vem da conexão (nunca de header do cliente) e o bloqueio também é marcad
 
 ## 🏷️ Versionamento
 
-**Versão atual: `1.0.0-beta.2`**
+**Versão atual: `1.0.0-beta.3`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) no formato:
 
@@ -1046,6 +1069,7 @@ git push origin main --tags                        # 3) publicar commits e tags
 | `1.0.0-alpha` | Login seguro (JWT + BCrypt), perfis e cadastro com confirmação por email |
 | `1.0.0-beta` | Integração com o microserviço de chamados técnicos, telas de chamados (cliente/técnico) e deploy |
 | `1.0.0-beta.2` | Hierarquia única de papéis alinhada ao microserviço e contas demo gerenciadas por administradores |
+| `1.0.0-beta.3` | Desafios de promoção (cavalo verde → Técnico, torre azul → Administrador) e nome de usuário com acentos |
 
 ---
 

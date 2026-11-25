@@ -4,6 +4,26 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto adota o
 [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) (`MAJOR.MINOR.PATCH[-PRÉ-RELEASE]`).
 
+## [1.0.0-beta.3] - 2026-11-25
+
+### Adicionado
+- **Desafio do Cavalo Verde** (♞): usuário logado resolve 3 puzzles seguidos de rating 1900–2600 em 5 minutos e é
+  promovido a **Técnico**.
+- **Desafio da Torre Azul** (♜): usuário logado resolve 5 puzzles seguidos de rating 2600–3000 em 5 minutos e é
+  promovido a **Administrador**.
+- Ambos usam o mesmo mecanismo da Rainha Vermelha (estado no servidor, um erro reinicia) e a **mesma proteção
+  contra bots e IAs** (bloqueio de IP por 1 hora, HTTP 418). Contas demo e usuários que já têm o perfil não participam.
+- Ícones dos desafios no canto da tela (cavalo verde, torre azul) e aviso no dashboard ao ser promovido.
+- Mais ~1,5 mil puzzles de rating 2600–2999 para o desafio da torre.
+- Teste unitário `NomeUsuarioTest` com a regra do nome de usuário.
+
+### Alterado
+- **Nome de usuário no cadastro:** passa a aceitar letras latinas com acento (`joão`, `José`), espaço entre palavras e
+  `. _ - @ +` (antes só letras ASCII, números e `. _ -`). Letras de outros alfabetos continuam recusadas para evitar nomes
+  visualmente idênticos aos de outras pessoas; a acentuação é normalizada (NFC) no cadastro e no login.
+- Todo cadastro começa com o perfil **Usuário**; a evolução de perfil acontece pelos desafios (ou por um administrador).
+- O serviço do desafio da Rainha Vermelha foi generalizado para os três tipos de desafio.
+
 ## [1.0.0-beta.2] - 2026-11-25
 
 ### Alterado
