@@ -19,12 +19,26 @@ public class HorarioAtendimentoController {
     private HorarioAtendimentoService horarioAtendimentoService;
 
     @PostMapping("/salvar")
-    public String salvarHorario(@ModelAttribute HorarioAtendimento horarioAtendimento) {
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public String salvarHorario(@jakarta.validation.Valid @ModelAttribute("novoHorario") HorarioAtendimento horarioAtendimento,
+            org.springframework.validation.BindingResult erros, org.springframework.ui.Model model,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirect) {
+        if (!erros.hasErrors() && horarioAtendimento.getHorarioInicio().compareTo(horarioAtendimento.getHorarioFim()) >= 0) {
+            erros.rejectValue("horarioFim", "intervalo", "O fim deve ser posterior ao início.");
+        }
+        if (erros.hasErrors()) {
+            model.addAttribute("horarios", horarioAtendimentoService.listarTodos());
+            model.addAttribute("content", "ajustes-horarios :: content");
+            return "layout";
+        }
+        horarioAtendimento.setId(null);
         horarioAtendimentoService.salvar(horarioAtendimento);
+        redirect.addFlashAttribute("sucesso", "Horário cadastrado.");
         return "redirect:/ajustes-horarios";
     }
 
-    @GetMapping("/deletar/{id}")
+    @PostMapping("/deletar/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public String deletarHorario(@PathVariable String id) {
         horarioAtendimentoService.deletar(id);
         return "redirect:/ajustes-horarios";

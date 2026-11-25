@@ -1,9 +1,14 @@
 <div th:fragment="content" class="container-fluid"
-     xmlns:th="http://www.thymeleaf.org">
+     xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
   <h1 class="mt-4">Ajustes de Horários por Setor</h1>
+  <div th:if="${sucesso}" class="alert alert-success" role="status" th:text="${sucesso}"></div>
+  <p>Consulte os dias e horários de atendimento. Administradores podem cadastrar e remover faixas.</p>
 
   <form th:action="@{/ajustes-horarios/salvar}" th:object="${novoHorario}"
-        method="post" class="mb-4">
+        method="post" class="mb-4" sec:authorize="hasRole('ADMIN')">
+    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger">
+      <p th:each="erro : ${#fields.allErrors()}" th:text="${erro}" class="mb-0"></p>
+    </div>
     <div class="row">
       <div class="col-md-3">
         <label for="setor" class="form-label">Setor</label>
@@ -12,8 +17,11 @@
       </div>
       <div class="col-md-2">
         <label for="diaSemana" class="form-label">Dia</label>
-        <input type="text" id="diaSemana" name="diaSemana" th:value="*{diaSemana}"
-               class="form-control" required />
+         <select id="diaSemana" th:field="*{diaSemana}" class="form-select" required>
+           <option value="">Selecione</option>
+           <option th:each="dia : ${ {'Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'} }"
+                   th:value="${dia}" th:text="${dia}"></option>
+         </select>
       </div>
       <div class="col-md-2">
         <label for="horarioInicio" class="form-label">Início</label>
@@ -31,21 +39,23 @@
     </div>
   </form>
 
-  <table class="table table-striped">
+  <div class="table-responsive"><table class="table table-striped">
     <thead>
-      <tr><th>Setor</th><th>Dia</th><th>Início</th><th>Fim</th><th>Ações</th></tr>
+      <tr><th>Setor</th><th>Dia</th><th>Início</th><th>Fim</th><th sec:authorize="hasRole('ADMIN')">Ações</th></tr>
     </thead>
     <tbody>
+      <tr th:if="${#lists.isEmpty(horarios)}"><td colspan="5">Nenhum horário cadastrado.</td></tr>
       <tr th:each="horario : ${horarios}">
         <td th:text="${horario?.setor}"></td>
         <td th:text="${horario?.diaSemana}"></td>
         <td th:text="${horario?.horarioInicio}"></td>
         <td th:text="${horario?.horarioFim}"></td>
-        <td>
-          <a th:href="@{/ajustes-horarios/deletar/{id}(id=${horario.id})}"
-             class="btn btn-danger btn-sm">Deletar</a>
+        <td sec:authorize="hasRole('ADMIN')">
+          <form th:action="@{/ajustes-horarios/deletar/{id}(id=${horario.id})}" method="post">
+            <button class="btn btn-danger btn-sm">Excluir</button>
+          </form>
         </td>
       </tr>
     </tbody>
-  </table>
+  </table></div>
 </div>

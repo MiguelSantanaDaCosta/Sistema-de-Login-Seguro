@@ -1,0 +1,24 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  <h1 th:text="${tituloCatalogo}">Catálogo</h1>
+  <p th:text="${descricaoCatalogo}"></p>
+  <div th:if="${sucesso}" class="alert alert-success" role="status" th:text="${sucesso}"></div>
+  <a sec:authorize="hasRole('ADMIN')" th:href="@{'/' + ${catalogo} + '/novo'}" class="btn btn-primary">Novo item</a>
+  <div class="table-responsive">
+    <table class="table table-striped mt-3">
+      <thead><tr><th>Nome</th><th>Descrição</th><th sec:authorize="hasRole('ADMIN')">Ações</th></tr></thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(itens)}"><td colspan="3">Nenhum item cadastrado.</td></tr>
+        <tr th:each="item : ${itens}">
+          <td th:text="${item.nome}"></td><td th:text="${item.descricao}"></td>
+          <td sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{'/' + ${catalogo} + '/editar/' + ${item.id}}" class="btn btn-warning btn-sm">Editar</a>
+            <form th:action="@{'/' + ${catalogo} + '/excluir/' + ${item.id}}" method="post" class="d-inline">
+              <button class="btn btn-danger btn-sm">Excluir</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

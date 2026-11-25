@@ -1,0 +1,18 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  <h1>Equipe técnica</h1>
+  <p>Contas ativas com permissão para atender e resolver chamados.</p>
+  <a href="/admin/usuarios" class="btn btn-primary mb-3" sec:authorize="hasRole('ADMIN')">Gerenciar perfis</a>
+  <a href="/tecnico/chamados" class="btn btn-outline-primary mb-3" sec:authorize="hasRole('TECNICO')">Abrir fila técnica</a>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead><tr><th>Usuário</th><th>Nome</th><th>Perfil</th></tr></thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(tecnicos)}"><td colspan="3">Nenhum técnico ativo.</td></tr>
+        <tr th:each="tecnico : ${tecnicos}">
+          <td th:text="${tecnico.username}"></td><td th:text="${tecnico.nome}"></td><td th:text="${tecnico.perfil}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

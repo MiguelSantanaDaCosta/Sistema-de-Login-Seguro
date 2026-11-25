@@ -8,6 +8,13 @@
   <div th:if="${erro}" class="alert alert-danger" th:text="${erro}"></div>
 
   <form th:action="@{/chamados/novo}" method="post" style="max-width: 640px">
+    <div class="mb-3" th:unless="${#lists.isEmpty(tipos)}">
+      <label for="tipoId" class="form-label">Tipo de chamado (opcional)</label>
+      <select id="tipoId" name="tipoId" class="form-select">
+        <option value="">Geral</option>
+        <option th:each="tipo : ${tipos}" th:value="${tipo.id}" th:text="${tipo.nome}" th:selected="${tipo.id == tipoId}"></option>
+      </select>
+    </div>
     <div class="mb-3">
       <label for="titulo" class="form-label">Título</label>
       <input

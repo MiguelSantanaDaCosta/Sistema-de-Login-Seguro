@@ -14,7 +14,9 @@ public class ClienteController {
     private ClienteService clienteService;
 
     @PostMapping
-    public Cliente novoCliente(@RequestBody Cliente cliente) {
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('TECNICO')")
+    public Cliente novoCliente(@jakarta.validation.Valid @RequestBody Cliente cliente) {
+        cliente.setId(null);
         return clienteService.novoCliente(cliente);
     }
 

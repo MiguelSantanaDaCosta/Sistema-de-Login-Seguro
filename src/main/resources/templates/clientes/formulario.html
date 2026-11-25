@@ -1,0 +1,22 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org">
+  <h1 th:text="${cliente.id == null} ? 'Novo cliente' : 'Editar cliente'">Cliente</h1>
+  <form th:action="${acao}" th:object="${cliente}" method="post" style="max-width:640px">
+    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert">
+      <p th:each="erro : ${#fields.allErrors()}" th:text="${erro}" class="mb-0"></p>
+    </div>
+    <div class="mb-3">
+      <label for="nome" class="form-label">Nome</label>
+      <input th:field="*{nome}" class="form-control" maxlength="100" required />
+    </div>
+    <div class="mb-3">
+      <label for="telefone" class="form-label">Telefone</label>
+      <input th:field="*{telefone}" type="tel" class="form-control" maxlength="30" />
+    </div>
+    <div class="mb-3">
+      <label for="setor" class="form-label">Setor</label>
+      <input th:field="*{setor}" class="form-control" maxlength="100" required />
+    </div>
+    <button class="btn btn-primary">Salvar cliente</button>
+    <a href="/clientes" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>

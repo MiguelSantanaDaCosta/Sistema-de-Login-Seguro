@@ -1,29 +1,35 @@
 <div th:fragment="content" class="container-fluid"
-     xmlns:th="http://www.thymeleaf.org">
+     xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
   <h1 class="mt-4">Clientes</h1>
+  <p>Contatos e setores atendidos pela equipe técnica.</p>
+  <div th:if="${sucesso}" class="alert alert-success" role="status" th:text="${sucesso}"></div>
+  <a sec:authorize="hasRole('TECNICO')" href="/clientes/novo" class="btn btn-primary">Novo cliente</a>
 
+  <div class="table-responsive">
   <table class="table table-bordered table-striped mt-3">
     <thead>
       <tr>
         <th>Nome</th>
         <th>Telefone</th>
         <th>Setor</th>
-        <th>Ações</th>
+        <th sec:authorize="hasRole('TECNICO')">Ações</th>
       </tr>
     </thead>
     <tbody>
+      <tr th:if="${#lists.isEmpty(clientes)}"><td colspan="4">Nenhum cliente cadastrado.</td></tr>
       <tr th:each="cliente : ${clientes}">
         <td th:text="${cliente.nome}"></td>
         <td th:text="${cliente.telefone}"></td>
         <td th:text="${cliente.setor}"></td>
-        <td>
-          <a th:href="@{'/clientes/novo'}" class="btn btn-primary btn-sm">Novo</a>
+        <td sec:authorize="hasRole('TECNICO')">
           <a th:href="@{'/clientes/editar/' + ${cliente.id}}"
              class="btn btn-warning btn-sm">Editar</a>
-          <a th:href="@{'/clientes/deletar/' + ${cliente.id}}"
-             class="btn btn-danger btn-sm">Excluir</a>
+          <form th:action="@{'/clientes/deletar/' + ${cliente.id}}" method="post" class="d-inline">
+            <button class="btn btn-danger btn-sm">Excluir</button>
+          </form>
         </td>
       </tr>
     </tbody>
   </table>
+  </div>
 </div>

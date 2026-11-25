@@ -13,8 +13,13 @@ public class Cliente {
 
     @Id
     private String id;
+    @jakarta.validation.constraints.NotBlank(message = "Informe o nome do cliente.")
+    @jakarta.validation.constraints.Size(max = 100, message = "Nome: no máximo 100 caracteres.")
     private String nome;
+    @jakarta.validation.constraints.Size(max = 30, message = "Telefone: no máximo 30 caracteres.")
     private String telefone;
+    @jakarta.validation.constraints.NotBlank(message = "Informe o setor.")
+    @jakarta.validation.constraints.Size(max = 100, message = "Setor: no máximo 100 caracteres.")
     private String setor;
 
     public String getId() {

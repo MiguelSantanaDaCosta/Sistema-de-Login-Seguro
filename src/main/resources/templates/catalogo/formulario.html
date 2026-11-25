@@ -1,0 +1,19 @@
+<div th:fragment="content" class="container-fluid" xmlns:th="http://www.thymeleaf.org">
+  <h1 th:text="${tituloCatalogo}">Catálogo</h1>
+  <h2 class="h5" th:text="${item.id == null} ? 'Novo item' : 'Editar item'">Item</h2>
+  <form th:action="${acao}" th:object="${item}" method="post" style="max-width:640px">
+    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert">
+      <p th:each="erro : ${#fields.allErrors()}" th:text="${erro}" class="mb-0"></p>
+    </div>
+    <div class="mb-3">
+      <label for="nome" class="form-label">Nome</label>
+      <input th:field="*{nome}" class="form-control" maxlength="100" required />
+    </div>
+    <div class="mb-3">
+      <label for="descricao" class="form-label">Descrição</label>
+      <textarea th:field="*{descricao}" class="form-control" maxlength="500" rows="4"></textarea>
+    </div>
+    <button class="btn btn-primary">Salvar item</button>
+    <a th:href="@{'/' + ${catalogo}}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>

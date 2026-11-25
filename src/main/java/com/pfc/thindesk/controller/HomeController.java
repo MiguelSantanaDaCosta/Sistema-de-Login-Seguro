@@ -48,6 +48,7 @@ public class HomeController {
     public String horarios(Model model) {
         List<HorarioAtendimento> horarios = horarioAtendimentoService.listarTodos();
         model.addAttribute("horarios", horarios);
+        model.addAttribute("novoHorario", new HorarioAtendimento());
         String fragment = "ajustes-horarios :: content";
         log.info("Carregando fragmento: {}", fragment); // Log para depuração
         model.addAttribute("content", fragment);
