@@ -1038,7 +1038,7 @@ O bloco inferior cruza uma amostra dos nossos puzzles com **dados públicos do L
 - **Banco de Mestres** (`explorer.lichess.org/masters`): a posição do puzzle já ocorreu em partida oficial (OTB)? Se sim, mostra jogadores, ano e o link.
 - **Classificação:** `MESTRES` (posição em partida de mestres) › `GM` › `TITULADO` (IM/FM/CM…) › `COMUM`. Cada destaque traz um link **"Ver no Lichess"**.
 
-**Resultado real (amostra):** as posições dos puzzles praticamente **não** aparecem em partidas de mestres (0 em 70 posições testadas), pois os puzzles saem de partidas *online* de jogadores comuns e posições de meio de jogo quase nunca se repetem em partidas oficiais. Cerca de 1 em cada 8 partidas de origem tem um jogador titulado. A ferramenta mede e mostra isso com honestidade — não inventa "partidas famosas".
+**Resultado real (amostra de 1.500 puzzles):** só **1** posição apareceu em partida de mestres (Ornstein × Ernst, 1995, rating 845) — as demais não, pois os puzzles saem de partidas *online* de jogadores comuns e posições de meio de jogo quase nunca se repetem em partidas oficiais. Já **237 (≈ 16 %)** das partidas de origem têm ao menos um jogador titulado, **26** delas com Grande Mestre (GM). Os números vêm da medição, não de uma lista curada de "partidas famosas".
 
 Configuração: `ANALISE_ENABLED`, `ANALISE_AMOSTRA` (padrão 1500), `ANALISE_INTERVALO_MS`.
 
