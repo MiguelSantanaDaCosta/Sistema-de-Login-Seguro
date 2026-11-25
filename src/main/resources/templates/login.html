@@ -47,13 +47,13 @@
 
         <form id="loginForm">
           <div class="form-group mb-3">
-            <label for="username" class="form-label">Usuário</label>
+            <label for="username" class="form-label">Usuário ou email</label>
             <input
               type="text"
               class="form-control"
               id="username"
               name="username"
-              placeholder="Digite seu nome de usuário"
+              placeholder="Digite seu usuário ou email"
               autocomplete="username"
               required
             />
@@ -92,6 +92,8 @@
           ></div>
           <button type="submit" class="btn btn-primary w-100">Entrar</button>
           <a href="/registrar" class="btn btn-link w-100 mt-2">Criar conta</a>
+          <a href="/reenviar-confirmacao" class="btn btn-link w-100">Reenviar confirmação de cadastro</a>
+          <p class="small text-muted mt-2">Contas cadastradas: senha → puzzle → link por email.</p>
         </form>
       </div>
     </div>
@@ -157,6 +159,11 @@
           e.preventDefault();
           const err = document.getElementById("error");
           err.textContent = "";
+          document.getElementById("info").textContent = "";
+          const botao = e.target.querySelector('[type="submit"]');
+          if (botao.disabled) return;
+          botao.disabled = true;
+          botao.textContent = "Entrando...";
 
           const params = new URLSearchParams({
             username: e.target.username.value,
@@ -171,13 +178,17 @@
             const dados = await resp.json().catch(() => ({}));
 
             if (!resp.ok) {
-              err.textContent = dados.erro || "Credenciais inválidas.";
+              err.textContent = dados.erro || "Não foi possível entrar agora. Tente novamente.";
               return;
             }
 
             e.target.password.value = ""; // não deixa a senha no campo
             if (dados.demo) { // conta de demonstração: entra direto
               window.location.href = dados.redirect || "/";
+              return;
+            }
+            if (typeof Chess !== "function" || typeof Chessboard !== "function" || typeof bootstrap === "undefined") {
+              err.textContent = "O tabuleiro não carregou. Atualize a página e tente novamente.";
               return;
             }
             PuzzleModal.abrir(dados, {
@@ -191,6 +202,9 @@
           } catch (ex) {
             err.textContent = "Erro ao contatar o servidor.";
             console.error(ex);
+          } finally {
+            botao.disabled = false;
+            botao.textContent = "Entrar";
           }
         });
 
@@ -199,6 +213,8 @@
         const q = new URLSearchParams(window.location.search);
         const info = document.getElementById("info");
         const err = document.getElementById("error");
+        if (q.get("sessao") === "expirada")
+          info.textContent = "Entre para acessar o sistema.";
         if (q.get("confirmado"))
           info.textContent = "Email confirmado! Agora você já pode entrar.";
         if (q.get("senha") === "redefinida")
@@ -208,7 +224,7 @@
             "Link enviado! Abra o seu email para concluir o login.";
         if (q.get("erro") === "link-invalido")
           err.textContent =
-            "Link inválido, vencido ou já utilizado. Faça login novamente.";
+            "Link inválido, vencido ou já utilizado. Para cadastro, use Reenviar confirmação; para entrar, refaça o login.";
       })();
     </script>
   </body>

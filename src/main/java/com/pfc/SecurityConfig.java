@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,6 +46,27 @@ public class SecurityConfig {
         http
                 // API stateless: não usa CSRF
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requestCache(cache -> cache.disable())
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, exception) -> {
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(401);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"erro\":\"Sessão ausente ou expirada. Entre novamente.\"}");
+                            } else {
+                                response.sendRedirect("/login?sessao=expirada");
+                            }
+                        })
+                        .accessDeniedHandler((request, response, exception) -> {
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(403);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"erro\":\"Seu perfil não permite esta operação.\"}");
+                            } else {
+                                response.sendError(403, "Seu perfil não permite acessar esta página.");
+                            }
+                        }))
 
                 .authorizeHttpRequests(auth -> auth
                         // Forward interno para /error não deve ser bloqueado
@@ -56,6 +78,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/registrar",
                                 "/esqueci-senha",
+                                "/reenviar-confirmacao",
                                 "/redefinir-senha",
                                 "/puzzle",
                                 "/auth/confirmar",

@@ -9,6 +9,7 @@ import com.pfc.thindesk.service.HorarioAtendimentoService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
@@ -24,13 +25,13 @@ public class HomeController {
     private HorarioAtendimentoService horarioAtendimentoService;
 
     @GetMapping("/login")
-    public String login() {
-        return "login";
+    public String login(Authentication auth) {
+        return auth != null && auth.isAuthenticated() ? "redirect:/" : "login";
     }
 
     @GetMapping("/puzzle")
     public String puzzle() {
-        return "puzzle";
+        return "redirect:/login";
     }
 
     @GetMapping("/clientes")

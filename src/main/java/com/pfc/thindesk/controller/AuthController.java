@@ -65,6 +65,8 @@ public class AuthController {
     private EmailService emailService;
     @Autowired
     private com.pfc.thindesk.service.DemoProps demoProps;
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Value("${app.security.puzzle.max-tentativas:5}")
     private int maxTentativas;
@@ -85,6 +87,22 @@ public class AuthController {
             HttpServletResponse response) {
 
         username = com.pfc.thindesk.util.NomeUsuario.normalizar(username);
+        // O identificador exato tem prioridade; o email é uma alternativa de login.
+        Optional<Usuario> encontrado = usuarioRepository.findByUsername(username);
+        if (encontrado.isEmpty()) {
+            encontrado = usuarioRepository.findByEmail(username.toLowerCase(java.util.Locale.ROOT));
+        }
+        if (encontrado.isPresent()) {
+            Usuario conta = encontrado.get();
+            username = conta.getUsername();
+            // Só detalha a pendência depois de conferir a senha.
+            if (!conta.isEmailConfirmado() && !conta.isAtivo()
+                    && passwordEncoder.matches(password, conta.getPassword())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapa(
+                        "erro", "Confirme seu email para ativar a conta. Se não recebeu o link, use Reenviar confirmação.",
+                        "confirmacaoPendente", true));
+            }
+        }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password));
@@ -321,6 +339,7 @@ public class AuthController {
         }
         String username = jwtUtil.extrairUsername(token);
         return usuarioRepository.findByUsername(username)
+                .filter(Usuario::isAtivo)
                 .orElseThrow(() -> new PreAuthInvalidoException(401, "Usuário não encontrado."));
     }
 

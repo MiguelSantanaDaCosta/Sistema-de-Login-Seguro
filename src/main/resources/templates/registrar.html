@@ -27,7 +27,7 @@
       <h3 class="text-center mb-4">Criar conta</h3>
 
       <!-- Formulário de cadastro; envia dados para /api/auth/registrar. -->
-      <form id="registroForm" novalidate>
+      <form id="registroForm">
         <div class="mb-3">
           <label for="nomeCompleto" class="form-label">Nome completo</label>
           <input
@@ -86,9 +86,17 @@
           <div class="form-text">Mínimo de 6 caracteres.</div>
         </div>
 
-        <div id="msg" class="mb-2" style="min-height: 1.2em"></div>
+        <div class="mb-3">
+          <label for="confirmar" class="form-label">Confirmar senha</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="confirmar" autocomplete="new-password" required />
+            <button type="button" class="btn btn-outline-secondary" data-toggle-senha="#confirmar"></button>
+          </div>
+        </div>
+        <div id="msg" class="mb-2" style="min-height: 1.2em" role="status"></div>
         <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
         <a href="/login" class="btn btn-link w-100 mt-2">Já tenho conta</a>
+        <a href="/reenviar-confirmacao" class="btn btn-link w-100">Não recebi o email de confirmação</a>
       </form>
     </div>
 
@@ -108,14 +116,26 @@
           mostrar("", true);
 
           const corpo = {
-            nomeCompleto: document.getElementById("nomeCompleto").value,
-            username: document.getElementById("username").value,
-            email: document.getElementById("email").value,
+            nomeCompleto: document.getElementById("nomeCompleto").value.trim(),
+            username: document.getElementById("username").value.trim().normalize("NFC"),
+            email: document.getElementById("email").value.trim(),
             password: document.getElementById("password").value,
           };
+          if (corpo.password !== document.getElementById("confirmar").value) {
+            mostrar("As senhas não são iguais.", false);
+            return;
+          }
+          if (new TextEncoder().encode(corpo.password).length > 72) {
+            mostrar("A senha ultrapassa 72 bytes. Use uma senha menor (acentos ocupam mais de um byte).", false);
+            return;
+          }
+          const botao = e.target.querySelector('[type="submit"]');
+          if (botao.disabled) return;
+          botao.disabled = true;
+          botao.textContent = "Cadastrando...";
 
           try {
-            <!-- Chamada à API de registro; exibe mensagem de sucesso ou erro. -->
+            // Chamada à API de registro; exibe mensagem de sucesso ou erro.
             const resp = await fetch("/api/auth/registrar", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -124,7 +144,7 @@
             const dados = await resp.json().catch(() => ({}));
 
             if (resp.status === 201) {
-              mostrar(dados.mensagem, true);
+              mostrar(dados.mensagem, dados.emailEnviado !== false);
               document.getElementById("registroForm").reset();
               return;
             }
@@ -135,6 +155,9 @@
           } catch (ex) {
             mostrar("Erro ao contatar o servidor.", false);
             console.error(ex);
+          } finally {
+            botao.disabled = false;
+            botao.textContent = "Cadastrar";
           }
         });
     </script>

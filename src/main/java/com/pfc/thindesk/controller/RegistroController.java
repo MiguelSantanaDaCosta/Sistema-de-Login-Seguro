@@ -56,6 +56,9 @@ public class RegistroController {
             String primeiro = campos.values().iterator().next();
             return ResponseEntity.badRequest().body(Map.of("erro", primeiro, "campos", campos));
         }
+        if (!com.pfc.thindesk.util.Senha.valida(req.password)) {
+            return ResponseEntity.badRequest().body(Map.of("erro", com.pfc.thindesk.util.Senha.REGRA));
+        }
 
         UsuarioService.ResultadoRegistro resultadoRegistro;
         try {
@@ -75,7 +78,7 @@ public class RegistroController {
         } else {
             // a conta foi criada, mas o email não saiu: não fingir que saiu
             corpo.put("mensagem", "Cadastro recebido, mas não conseguimos enviar o email de confirmação agora. "
-                    + "Na tela de login, use \"Esqueci minha senha\" com o seu email para receber o link.");
+                    + "Use \"Reenviar confirmação\" com o seu email para tentar novamente.");
         }
         corpo.put("aguardandoConfirmacao", true);
         corpo.put("emailEnviado", resultadoRegistro.emailEnviado());

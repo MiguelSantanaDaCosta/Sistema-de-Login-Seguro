@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -47,14 +50,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // preAuth não autentica: só serve para o fluxo do puzzle
             if (!Boolean.TRUE.equals(isPreAuth)) {
                 String username = jwtUtil.extrairUsername(token);
-                UserDetails userDetails = usuarioService.loadUserByUsername(username);
-
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                try {
+                    UserDetails userDetails = usuarioService.loadUserByUsername(username);
+                    if (userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        limparCookie(response);
+                    }
+                } catch (UsernameNotFoundException e) {
+                    // Uma conta removida pode continuar com cookie no navegador.
+                    // Isso não deve impedir nem mesmo a abertura da tela de login.
+                    limparCookie(response);
+                }
             }
+        } else if (token != null) {
+            limparCookie(response);
         }
         filterChain.doFilter(request, response);
+    }
+
+    private void limparCookie(HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from(COOKIE_AUTH, "")
+                .httpOnly(true).path("/").maxAge(0).sameSite("Lax").build().toString());
     }
 
     // Tenta header primeiro, depois cookie

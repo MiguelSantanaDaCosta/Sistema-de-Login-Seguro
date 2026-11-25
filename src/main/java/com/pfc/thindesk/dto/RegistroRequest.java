@@ -32,4 +32,16 @@ public class RegistroRequest {
     @NotBlank(message = "O nome completo é obrigatório.")
     @Size(max = 100, message = "O nome completo deve ter no máximo 100 caracteres.")
     public String nomeCompleto;
+
+    public void setUsername(String username) {
+        this.username = com.pfc.thindesk.util.NomeUsuario.normalizar(username);
+    }
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    public void setNomeCompleto(String nomeCompleto) {
+        this.nomeCompleto = nomeCompleto == null ? null : nomeCompleto.trim();
+    }
 }

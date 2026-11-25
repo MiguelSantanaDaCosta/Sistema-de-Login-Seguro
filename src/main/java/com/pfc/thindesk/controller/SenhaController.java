@@ -90,29 +90,36 @@ public class SenhaController {
         return "esqueci-senha";
     }
 
+    @GetMapping("/reenviar-confirmacao")
+    public String paginaReenvio(Model model) {
+        model.addAttribute("somenteConfirmacao", true);
+        return "esqueci-senha";
+    }
+
     @GetMapping("/redefinir-senha")
     public String paginaRedefinir(@RequestParam(required = false) String token, Model model) {
         model.addAttribute("token", token == null ? "" : token);
         return "redefinir-senha";
     }
 
-    @PostMapping("/api/auth/esqueci-senha")
+    @PostMapping({"/api/auth/esqueci-senha", "/api/auth/reenviar-confirmacao"})
     @ResponseBody
     public ResponseEntity<?> esqueci(@RequestParam String email, HttpServletRequest request) {
         if (limitado(request, "esqueci", MAX_ESQUECI_POR_IP)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("erro", "Muitos pedidos. Aguarde alguns minutos e tente de novo."));
         }
-        String mail = email == null ? "" : email.trim().toLowerCase();
+        String mail = email == null ? "" : email.trim().toLowerCase(java.util.Locale.ROOT);
+        boolean somenteConfirmacao = request.getRequestURI().endsWith("/reenviar-confirmacao");
         Map<String, Object> corpo = new LinkedHashMap<>();
         corpo.put("mensagem", RESPOSTA_GENERICA);
 
         if (exporLinkDev) {
-            corpo.put("linkDev", processar(mail)); // teste: síncrono, devolve o link
+            corpo.put("linkDev", processar(mail, somenteConfirmacao)); // teste: síncrono, devolve o link
         } else {
             envio.submit(() -> {
                 try {
-                    processar(mail);
+                    processar(mail, somenteConfirmacao);
                 } catch (RuntimeException e) {
                     log.error("Falha no esqueci-senha: {}", e.toString());
                 }
@@ -122,7 +129,7 @@ public class SenhaController {
     }
 
     /** Decide o que enviar para o email; devolve o link gerado (ou null). Nunca lança para o usuário. */
-    private String processar(String mail) {
+    private String processar(String mail, boolean somenteConfirmacao) {
         if (!mail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
             return null;
         }
@@ -144,7 +151,7 @@ public class SenhaController {
             emailService.enviarTokenRegistro(u.getEmail(), token);
             return emailService.linkRegistro(token);
         }
-        if (!u.isAtivo()) {
+        if (somenteConfirmacao || !u.isAtivo()) {
             return null; // desativada por um administrador
         }
         if (emailTokenService.gereiHa(u.getUsername(), TipoToken.REDEFINICAO, INTERVALO_REENVIO)) {
@@ -163,8 +170,8 @@ public class SenhaController {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("erro", "Muitas tentativas. Aguarde alguns minutos e tente de novo."));
         }
-        if (password == null || password.length() < 6 || password.length() > 72) {
-            return ResponseEntity.badRequest().body(Map.of("erro", "A senha deve ter entre 6 e 72 caracteres."));
+        if (!com.pfc.thindesk.util.Senha.valida(password)) {
+            return ResponseEntity.badRequest().body(Map.of("erro", com.pfc.thindesk.util.Senha.REGRA));
         }
         String invalido = "Link inválido, vencido ou já utilizado. Peça um novo em \"Esqueci minha senha\".";
 
@@ -194,8 +201,16 @@ public class SenhaController {
             while (!fila.isEmpty() && agora - fila.peekFirst() > JANELA_MS) {
                 fila.pollFirst();
             }
+            if (fila.size() >= max) {
+                return true;
+            }
             fila.addLast(agora);
-            return fila.size() > max;
+            return false;
         }
+    }
+
+    @jakarta.annotation.PreDestroy
+    public void fecharExecutor() {
+        envio.shutdown();
     }
 }

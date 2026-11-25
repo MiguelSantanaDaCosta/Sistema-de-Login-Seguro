@@ -54,6 +54,7 @@
         const token = document.getElementById("token").value;
         if (!token) { mostrar("Link inválido. Peça um novo em \"Esqueci minha senha\".", false); return; }
         if (senha.length < 6 || senha.length > 72) { mostrar("A senha deve ter entre 6 e 72 caracteres.", false); return; }
+        if (new TextEncoder().encode(senha).length > 72) { mostrar("A senha ultrapassa 72 bytes. Use uma senha menor.", false); return; }
         if (senha !== confirmar) { mostrar("As senhas não são iguais.", false); return; }
 
         const botao = document.getElementById("salvar");
