@@ -113,3 +113,7 @@ estrutura*.png
 estrutura*.jpg
 estrutura*.zip
 estrutura*.xz
+
+# Backups locais e cookies de teste (não versionar)
+.backup-layout/
+cookies.txt
