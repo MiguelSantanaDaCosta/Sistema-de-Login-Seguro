@@ -1091,6 +1091,6 @@ As contas de demonstração só existem/funcionam quando `DEMO_ENABLED=true`. A 
 
 Uso livre para fins acadêmicos e comerciais. Os dados de puzzles do Lichess são **CC0**.
 
-**Citação sugerida** (para trabalhos acadêmicos):
+para trabalhos acadêmicos
 
 > LICHESS. **Lichess Open Database — Puzzles**. Disponível em: <https://database.lichess.org/#puzzles>. Licença CC0 1.0 Universal.
