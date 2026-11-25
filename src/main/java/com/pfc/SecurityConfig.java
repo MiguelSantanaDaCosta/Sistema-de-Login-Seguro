@@ -55,6 +55,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/login",
                                 "/registrar",
+                                "/esqueci-senha",
+                                "/redefinir-senha",
                                 "/puzzle",
                                 "/auth/confirmar",
                                 "/auth/confirmar-registro",

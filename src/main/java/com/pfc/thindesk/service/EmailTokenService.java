@@ -37,6 +37,8 @@ public class EmailTokenService {
     private long loginMinutos;
     @Value("${app.security.email-token.registro-horas:24}")
     private long registroHoras;
+    @Value("${app.security.email-token.redefinicao-minutos:30}")
+    private long redefinicaoMinutos;
 
     /**
      * Gera um token novo e devolve o valor BRUTO (vai só no email). Tokens
@@ -51,14 +53,17 @@ public class EmailTokenService {
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
-        Duration validade = (tipo == TipoToken.LOGIN)
-                ? Duration.ofMinutes(loginMinutos)
-                : Duration.ofHours(registroHoras);
+        Duration validade = switch (tipo) {
+            case LOGIN -> Duration.ofMinutes(loginMinutos);
+            case REDEFINICAO -> Duration.ofMinutes(redefinicaoMinutos);
+            case REGISTRO -> Duration.ofHours(registroHoras);
+        };
 
         EmailToken doc = new EmailToken();
         doc.setTokenHash(hash(token));
         doc.setUsername(username);
         doc.setTipo(tipo);
+        doc.setCriadoEm(Instant.now());
         doc.setExpiraEm(Instant.now().plus(validade));
         repository.save(doc);
         return token;
@@ -87,7 +92,18 @@ public class EmailTokenService {
     }
 
     public long validadeMinutos(TipoToken tipo) {
-        return tipo == TipoToken.LOGIN ? loginMinutos : registroHoras * 60;
+        return switch (tipo) {
+            case LOGIN -> loginMinutos;
+            case REDEFINICAO -> redefinicaoMinutos;
+            case REGISTRO -> registroHoras * 60;
+        };
+    }
+
+    /** true se já foi gerado um token deste tipo para o usuário dentro da janela (evita enviar email em sequência). */
+    public boolean gereiHa(String username, TipoToken tipo, Duration janela) {
+        Instant limite = Instant.now().minus(janela);
+        return repository.findByUsernameAndTipo(username, tipo).stream()
+                .anyMatch(t -> t.getCriadoEm() != null && t.getCriadoEm().isAfter(limite));
     }
 
     // Gera o hash SHA-256 do token para armazenamento seguro.

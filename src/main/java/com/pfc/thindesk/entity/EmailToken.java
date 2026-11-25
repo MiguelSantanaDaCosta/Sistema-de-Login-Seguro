@@ -30,6 +30,9 @@ public class EmailToken {
     // Finalidade do token (LOGIN ou REGISTRO); impede usar um tipo no lugar do outro.
     private TipoToken tipo;
 
+    // Quando o token foi gerado: usado para limitar reenvios em sequência (anti-spam de email).
+    private Instant criadoEm;
+
     // Fim da validade. É conferido pelo CÓDIGO (relógio da aplicação); não tem índice TTL.
     private Instant expiraEm;
 

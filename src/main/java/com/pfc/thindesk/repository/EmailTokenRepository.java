@@ -12,5 +12,7 @@ public interface EmailTokenRepository extends MongoRepository<EmailToken, String
 
     void deleteByUsernameAndTipo(String username, TipoToken tipo);
 
+    java.util.List<EmailToken> findByUsernameAndTipo(String username, TipoToken tipo);
+
     boolean existsByUsernameAndTipoAndExpiraEmAfter(String username, TipoToken tipo, Instant agora);
 }
