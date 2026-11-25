@@ -22,7 +22,8 @@ Sistema de **autenticação e autorização** construído em Java Spring Boot + 
 12. [Testes](#testes)
 13. [tema de xadrez](#apêndice-a--base-genérica-vs-tema-de-xadrez)
 14. [Diagrama do fluxo de login](#apêndice-b--diagrama-do-fluxo-de-login)
-15. [Licença](#licença)
+15. [Versionamento](#️-versionamento) · [Dashboard](#️-dashboard) · [Deploy e acesso](#-deploy-e-acesso)
+16. [Licença](#licença)
 
 ---
 
@@ -915,6 +916,138 @@ sequenceDiagram
     A->>A: gera JWT FINAL
     A-->>U: redirect / + Set-Cookie: thindesk_auth (HttpOnly)
 ```
+
+---
+
+## 👑 Perfis, dificuldade do puzzle e o perfil `root`
+
+O segundo fator (puzzle de xadrez) tem dificuldade proporcional ao perfil. O **maior** perfil do usuário define a faixa de rating (Lichess):
+
+| Perfil | Faixa de rating | Variáveis |
+| ------ | --------------- | --------- |
+| Conta do dono (`PUZZLE_EMAIL_FACIL`) | 0 – 1000, **sempre** | `PUZZLE_EMAIL_FACIL`, `PUZZLE_FACIL_MAX` |
+| `ROLE_USUARIO` | 1100 – 1399 | `PUZZLE_USUARIO_MIN/MAX` |
+| `ROLE_TECNICO` | 1400 – 1800 | `PUZZLE_TECNICO_MIN/MAX` |
+| `ROLE_ADMIN` | 1900 – 2400 | `PUZZLE_ADMIN_MIN/MAX` |
+
+- A conta do dono é identificada pelo **email vindo de variável de ambiente** (`PUZZLE_EMAIL_FACIL`; se vazio, usa `ADMIN_EMAIL`). Nenhum email pessoal fica no código.
+- O link de confirmação do login é enviado ao **email cadastrado do próprio usuário** que está logando.
+- O `ADMIN_EMAIL` define o email do usuário `admin` no primeiro boot (e substitui o placeholder `@thindesk.local` se o admin já existir).
+
+### Rainha vermelha (`ROLE_ROOT`) — recurso "piada"
+
+Com `ROOT_ENABLED=true`, aparece uma rainha vermelha (♛) no canto da tela. Ela leva ao **desafio**: resolver **5 puzzles seguidos, sem errar, em 5 minutos**, todos com **rating ≥ 3000** (`puzzles_lichess_elite.csv`, ~1.9 mil puzzles). Quem vence recebe a sessão do usuário `root` **sem precisar de login** e ganha o **Painel root** (`/root`): navegar, inserir, editar e **excluir** qualquer documento dos bancos `thindesk` e `ms_chamados`, além de acesso a todos os endpoints.
+
+- Todo o estado do desafio fica no servidor (coleção `root_desafios`, com expiração automática); o lance correto nunca vai ao navegador.
+- O perfil `ROOT` **não pode** ser atribuído pela tela de administração, e o usuário `root` não tem senha utilizável.
+
+#### Proteção contra bots e IAs
+
+Qualquer sinal abaixo **bloqueia o IP por 1 hora em todo o site** (coleção `ip_bloqueados`, com expiração automática) e responde **HTTP 418 — "Eu sou um bule de chá"**:
+
+| Sinal | Como é detectado |
+| ----- | ---------------- |
+| Cliente automatizado | `User-Agent` vazio ou de curl/python/headless/selenium/crawlers de IA (GPTBot, ClaudeBot…); sem `Accept-Language` |
+| Não passou pela página | falta o cookie assinado `thindesk_visita` (preso ao IP) |
+| Formulário automatizado | campo-isca (honeypot) preenchido |
+| Navegador automatizado | `navigator.webdriver` verdadeiro |
+| Rajada | mais de 8 inícios de desafio em 5 min no mesmo IP |
+| Rápido demais | resposta em menos de 4 s (`ROOT_MIN_SEGUNDOS`) num puzzle de rating ≥ 3000 |
+
+O IP vem da conexão (nunca de header do cliente) e o bloqueio também é marcado num cookie assinado, que persiste se o IP mudar. `BOT_IPS_PERMITIDOS` lista IPs que nunca são bloqueados.
+
+- ⚠️ **Limites honestos:** são heurísticas. Barram automação óbvia e engines que chamam a API, mas **não** um navegador real conduzido por uma pessoa (ou IA com visão) que leve mais de 4 s por lance.
+- ⚠️ **Risco:** o root dá acesso total e anônimo ao banco, protegido só por puzzles. Por isso o recurso vem **desligado por padrão**; mantenha-o desligado em ambientes com dados reais.
+
+---
+
+## 🏷️ Versionamento
+
+**Versão atual: `1.0.0-beta`**
+
+O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) no formato:
+
+```
+MAJOR.MINOR.PATCH[-PRÉ-RELEASE]
+```
+
+| Parte | Quando incrementar | Exemplo |
+| ----- | ------------------ | ------- |
+| `MAJOR` | Mudança incompatível (ex.: troca do esquema de autenticação ou das coleções do MongoDB) | `1.0.0` → `2.0.0` |
+| `MINOR` | Nova funcionalidade compatível (ex.: novo módulo, nova tela) | `1.0.0` → `1.1.0` |
+| `PATCH` | Correção de bug compatível | `1.0.0` → `1.0.1` |
+| `-alpha` / `-beta` / `-rc.N` | Pré-release: `alpha` = em desenvolvimento, `beta` = funcional porém em testes, `rc` = candidata a lançamento | `1.0.0-beta` → `1.0.0-rc.1` → `1.0.0` |
+
+A versão é declarada em `pom.xml` (`<version>`) e cada release é marcada com uma tag Git (`v1.0.0-beta`).
+
+**Histórico:**
+
+| Versão | Descrição |
+| ------ | --------- |
+| `1.0.0-alpha` | Login seguro (JWT + BCrypt), perfis e cadastro com confirmação por email |
+| `1.0.0-beta` | Integração com o microserviço de chamados técnicos, telas de chamados (cliente/técnico) e deploy |
+
+---
+
+## 🖼️ Dashboard
+
+Página inicial (`/`), após o login. Mostra os indicadores dos chamados do usuário (total, abertos, resolvidos, taxa de resolução), a barra de andamento, os últimos chamados e, para `TECNICO`/`ADMIN`, a fila de abertos da equipe. Os dados vêm do microserviço de chamados.
+
+![Dashboard do Thindesk](docs/img/dashboard.png)
+
+### Puzzles × partidas reais do Lichess
+
+O bloco inferior cruza uma amostra dos nossos puzzles com **dados públicos do Lichess** (sem token e sem dados de usuários nossos), em segundo plano (~1 requisição/s, retomável):
+
+- **Partida de origem:** todo puzzle do Lichess é extraído de uma partida real. A partida é exportada (`lichess.org/game/export/{id}`) para obter jogadores, títulos e ano.
+- **Banco de Mestres** (`explorer.lichess.org/masters`): a posição do puzzle já ocorreu em partida oficial (OTB)? Se sim, mostra jogadores, ano e o link.
+- **Classificação:** `MESTRES` (posição em partida de mestres) › `GM` › `TITULADO` (IM/FM/CM…) › `COMUM`. Cada destaque traz um link **"Ver no Lichess"**.
+
+**Resultado real (amostra):** as posições dos puzzles praticamente **não** aparecem em partidas de mestres (0 em 70 posições testadas), pois os puzzles saem de partidas *online* de jogadores comuns e posições de meio de jogo quase nunca se repetem em partidas oficiais. Cerca de 1 em cada 8 partidas de origem tem um jogador titulado. A ferramenta mede e mostra isso com honestidade — não inventa "partidas famosas".
+
+Configuração: `ANALISE_ENABLED`, `ANALISE_AMOSTRA` (padrão 1500), `ANALISE_INTERVALO_MS`.
+
+> O explorer de partidas *online* do Lichess (`/lichess`) exige token pessoal e **não** é usado.
+
+---
+
+## 🌐 Deploy e acesso
+
+### Passo a passo (AWS EC2 + Docker + Atlas)
+
+1. **EC2:** Ubuntu 22.04/24.04, `t3.small` (ou `t2.micro` free tier com swap). *Security Group*: entrada `22` (seu IP), `80` e `443` (0.0.0.0/0). Associe um **Elastic IP**.
+2. **Atlas → Network Access:** libere o Elastic IP da EC2 (ou `0.0.0.0/0` apenas para a demonstração).
+3. **Instalar Docker na VM:**
+   ```bash
+   curl -fsSL https://get.docker.com | sudo sh
+   sudo usermod -aG docker $USER && newgrp docker
+   ```
+4. **Clonar os dois repositórios lado a lado:**
+   ```bash
+   git clone https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro.git thindesk
+   git clone https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos-.git ms-chamados
+   cd thindesk && cp .env.example .env && nano .env
+   ```
+   No `.env`: `MONGO_URI` (Atlas), `JWT_SECRET` (igual no microserviço), `APP_BASE_URL=http://<ELASTIC-IP>`, e `MAIL_*` para os emails reais.
+5. **Subir:** `docker compose up -d --build` e acompanhar com `docker compose logs -f`.
+6. Acessar `http://<ELASTIC-IP>/`.
+
+| Item | Link |
+| ---- | ---- |
+| Aplicação (deploy) | **http://3.145.58.232/** |
+| Repositório — Login seguro / Thindesk | https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro |
+| Repositório — Microserviço de chamados | https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos- |
+
+**Credencial de exemplo:**
+
+Qualquer pessoa pode entrar com a **conta de demonstração** (perfil `USUARIO`, sem privilégios administrativos):
+
+| Conta | Usuário | Senha | Como entra |
+| ----- | ------- | ----- | ---------- |
+| Usuário comum | `demo` | `demo1234` | só usuário e senha |
+| Administrador | `demo2` | `demo2-1234` | senha + **puzzle de xadrez** de nível admin (rating 1900–2400); **não envia email** |
+
+As contas de demonstração só existem/funcionam quando `DEMO_ENABLED=true`. A `demo` entra **somente com senha**; a `demo2` passa pelo puzzle como todo admin, mas o login termina ao acertá-lo (sem link por email). As demais contas usam o login completo em 3 fatores (senha → puzzle de xadrez → link enviado ao email do usuário). Pode abrir chamados à vontade.
 
 ---
 
