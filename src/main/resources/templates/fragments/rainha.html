@@ -8,14 +8,14 @@
        A rainha aparece em TODAS as páginas (mesmo não autenticado). -->
   <div th:fragment="rainha">
     <!-- Rainha: em qualquer página (pública ou privada) -->
-    <a th:if="${@rootProps.habilitado}" th:href="@{/root/desafio}"
+    <a th:if="${@rootProps.isHabilitado()}" th:href="@{/root/desafio}"
        class="icone-desafio rainha" title="Desafio da Rainha Vermelha — você ousa?">&#9819;</a>
 
     <!-- Cavalo e Torre: só para usuários logados abaixo do seu nível -->
-    <a th:if="${@rootProps.cavaloHabilitado}" sec:authorize="isAuthenticated() and !hasRole('TECNICO')"
+    <a th:if="${@rootProps.isCavaloHabilitado()}" sec:authorize="isAuthenticated() and !hasRole('TECNICO')"
        th:href="@{/desafio/cavalo}" class="icone-desafio cavalo"
        title="Desafio do Cavalo Verde — vire Técnico">&#9822;</a>
-    <a th:if="${@rootProps.torreHabilitada}" sec:authorize="isAuthenticated() and !hasRole('ADMIN')"
+    <a th:if="${@rootProps.isTorreHabilitada()}" sec:authorize="isAuthenticated() and !hasRole('ADMIN')"
        th:href="@{/desafio/torre}" class="icone-desafio torre"
        title="Desafio da Torre Azul — vire Administrador">&#9820;</a>
 
