@@ -86,11 +86,17 @@ public class AuthController {
             @RequestParam String password,
             HttpServletResponse response) {
 
-        username = com.pfc.thindesk.util.NomeUsuario.normalizar(username);
-        // O identificador exato tem prioridade; o email é uma alternativa de login.
-        Optional<Usuario> encontrado = usuarioRepository.findByUsername(username);
-        if (encontrado.isEmpty()) {
-            encontrado = usuarioRepository.findByEmail(username.toLowerCase(java.util.Locale.ROOT));
+        String input = username;
+        // Se é email (contém @), busca por email; senão normaliza como username
+        Optional<Usuario> encontrado;
+        if (input.contains("@")) {
+            encontrado = usuarioRepository.findByEmail(input.trim().toLowerCase(java.util.Locale.ROOT));
+        } else {
+            username = com.pfc.thindesk.util.NomeUsuario.normalizar(input);
+            encontrado = usuarioRepository.findByUsername(username);
+            if (encontrado.isEmpty()) {
+                encontrado = usuarioRepository.findByEmail(input.trim().toLowerCase(java.util.Locale.ROOT));
+            }
         }
         if (encontrado.isPresent()) {
             Usuario conta = encontrado.get();
@@ -190,7 +196,7 @@ public class AuthController {
             }
 
             String token = emailTokenService.gerar(usuario.getUsername(), TipoToken.LOGIN); // 15 min, uso único
-            boolean enviado = emailService.enviarTokenConfirmacao(email, token);
+            boolean enviado = emailService.enviarTokenConfirmacao(email, token, usuario.getNomeCompleto());
 
             puzzleService.limpar(usuario); // puzzle concluído
             response.addHeader(HttpHeaders.SET_COOKIE, cookieLimpo(COOKIE_PRE).toString()); // preAuth cumpriu seu papel

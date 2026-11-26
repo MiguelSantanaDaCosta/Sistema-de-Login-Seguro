@@ -1172,17 +1172,23 @@ Configuração: `ANALISE_ENABLED`, `ANALISE_AMOSTRA` (padrão 1500), `ANALISE_IN
 | Repositório — Login seguro / Thindesk | https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro |
 | Repositório — Microserviço de chamados | https://github.com/MiguelSantanaDaCosta/-Microservi-o-de-Chamados-T-cnicos- |
 
-**Credencial de exemplo:**
+**Credenciais de Acesso:**
 
-Qualquer pessoa pode entrar com as **contas de demonstração** (uma por perfil, sem acesso ao banco nem ao `ROOT`):
-
-| Perfil | Usuário | Senha | Como entra |
+| Perfil | Usuário ou Email | Senha | Como entra |
 | ------ | ------- | ----- | ---------- |
-| `USUARIO` | `demo` | `demo1234` | só usuário e senha |
-| `TECNICO` | `demo-tecnico` | `tecnico123` | só usuário e senha (vê a fila técnica e resolve chamados) |
-| `ADMIN` | `demo2` | `demo2-1234` | senha + **puzzle de xadrez** de nível admin (rating 1900–2400); **não envia email** |
+| `USUARIO` | `demo` | `demo1234` | Usuário/Email + senha → puzzle de xadrez → link por email |
+| `USUARIO` | `demo@example.com` | `demo1234` | Usuário/Email + senha → puzzle de xadrez → link por email |
+| `TECNICO` | `demo-tecnico` | `tecnico123` | Usuário/Email + senha → puzzle de xadrez → link por email |
+| `TECNICO` | `demo-tecnico@example.com` | `tecnico123` | Usuário/Email + senha → puzzle de xadrez → link por email |
+| `USUARIO` | `demo2` | `demo2-1234` | Usuário/Email + senha → puzzle de xadrez → link por email |
+| `USUARIO` | `demo2@example.com` | `demo2-1234` | Usuário/Email + senha → puzzle de xadrez → link por email |
 
-As contas demo **não estão no código**: um administrador as cria, redefine e remove em **Contas demo** (`/admin/demos`), escolhendo o perfil e se a conta entra só com senha ou com senha + puzzle. O recurso é ligado por `DEMO_ENABLED=true`. As demais contas usam o login completo (senha → puzzle → link enviado ao email do usuário). Pode abrir chamados à vontade.
+**Funcionalidades:**
+- Pode fazer login com **usuário OU email** em qualquer conta
+- Todos os usuários resolvem um **puzzle de xadrez** como segundo fator de autenticação
+- Recebem um **link por email** para concluir o login (terceiro fator)
+- Podem abrir, acompanhar e resolver chamados técnicos (conforme o perfil)
+- Acesso à plataforma completa (dashboard, cadastros, etc)
 
 ---
 

@@ -75,7 +75,7 @@ public class UsuarioService implements UserDetailsService {
         usuarioRepository.save(usuario);
 
         String token = emailTokenService.gerar(username, TipoToken.REGISTRO);
-        boolean enviado = emailService.enviarTokenRegistro(email, token);
+        boolean enviado = emailService.enviarTokenRegistro(email, token, usuario.getNomeCompleto());
         return new ResultadoRegistro(token, enviado);
     }
 

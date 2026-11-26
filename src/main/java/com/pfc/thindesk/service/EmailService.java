@@ -64,9 +64,10 @@ public class EmailService {
     }
 
     // Envia o link de login depois que o usuário resolve o puzzle.
-    public boolean enviarTokenConfirmacao(String destinatario, String token) {
+    public boolean enviarTokenConfirmacao(String destinatario, String token, String nomeCompleto) {
         String link = linkLogin(token);
-        String corpo = "Você resolveu o puzzle!\n\n"
+        String corpo = "Olá " + nomeCompleto + "!\n\n"
+                + "Você resolveu o puzzle!\n\n"
                 + "Clique no link abaixo para concluir o login:\n\n" + link + "\n\n"
                 + "O link expira em " + loginMinutos + " minutos e só pode ser usado uma vez.\n"
                 + "Se não foi você, ignore este email e troque a sua senha.";
@@ -74,9 +75,9 @@ public class EmailService {
     }
 
     // Envia o link que confirma o email e ativa a conta recém-cadastrada.
-    public boolean enviarTokenRegistro(String destinatario, String token) {
+    public boolean enviarTokenRegistro(String destinatario, String token, String nomeCompleto) {
         String link = linkRegistro(token);
-        String corpo = "Bem-vindo ao Thindesk!\n\n"
+        String corpo = "Bem-vindo ao Thindesk, " + nomeCompleto + "!\n\n"
                 + "Confirme o seu email para ativar a conta:\n\n" + link + "\n\n"
                 + "O link expira em " + registroHoras + " horas e só pode ser usado uma vez.\n"
                 + "Se você não criou esta conta, ignore este email.";
@@ -84,9 +85,10 @@ public class EmailService {
     }
 
     // Envia o link para criar uma nova senha (esqueci minha senha).
-    public boolean enviarTokenRedefinicao(String destinatario, String token) {
+    public boolean enviarTokenRedefinicao(String destinatario, String token, String nomeCompleto) {
         String link = linkRedefinicao(token);
-        String corpo = "Recebemos um pedido para redefinir a senha da sua conta no Thindesk.\n\n"
+        String corpo = "Olá " + nomeCompleto + "!\n\n"
+                + "Recebemos um pedido para redefinir a senha da sua conta no Thindesk.\n\n"
                 + "Clique no link abaixo para escolher uma nova senha:\n\n" + link + "\n\n"
                 + "O link expira em " + redefinicaoMinutos + " minutos e só pode ser usado uma vez.\n"
                 + "Se não foi você, ignore este email: a sua senha continua a mesma.";
@@ -94,8 +96,9 @@ public class EmailService {
     }
 
     // Avisa que a senha foi alterada (para o dono perceber se não foi ele).
-    public boolean enviarSenhaAlterada(String destinatario) {
-        String corpo = "A senha da sua conta no Thindesk acabou de ser alterada.\n\n"
+    public boolean enviarSenhaAlterada(String destinatario, String nomeCompleto) {
+        String corpo = "Olá " + nomeCompleto + "!\n\n"
+                + "A senha da sua conta no Thindesk acabou de ser alterada.\n\n"
                 + "Se foi você, não precisa fazer nada. Se não foi, peça uma nova redefinição de senha "
                 + "imediatamente e avise o administrador.";
         return enviar(destinatario, "Thindesk — Sua senha foi alterada", corpo, baseUrl + "/esqueci-senha");

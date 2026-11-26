@@ -148,7 +148,7 @@ public class SenhaController {
                 return null;
             }
             String token = emailTokenService.gerar(u.getUsername(), TipoToken.REGISTRO);
-            emailService.enviarTokenRegistro(u.getEmail(), token);
+            emailService.enviarTokenRegistro(u.getEmail(), token, u.getNomeCompleto());
             return emailService.linkRegistro(token);
         }
         if (somenteConfirmacao || !u.isAtivo()) {
@@ -158,7 +158,7 @@ public class SenhaController {
             return null;
         }
         String token = emailTokenService.gerar(u.getUsername(), TipoToken.REDEFINICAO);
-        emailService.enviarTokenRedefinicao(u.getEmail(), token);
+        emailService.enviarTokenRedefinicao(u.getEmail(), token, u.getNomeCompleto());
         return emailService.linkRedefinicao(token);
     }
 
@@ -189,7 +189,7 @@ public class SenhaController {
         emailTokenService.invalidar(u.getUsername(), TipoToken.LOGIN); // links de login antigos deixam de valer
         log.info("Senha redefinida pelo link do email: usuário '{}'", u.getUsername());
         String email = u.getEmail();
-        envio.submit(() -> emailService.enviarSenhaAlterada(email));
+        envio.submit(() -> emailService.enviarSenhaAlterada(email, u.getNomeCompleto()));
         return ResponseEntity.ok(Map.of("mensagem", "Senha redefinida! Entre com a nova senha."));
     }
 
