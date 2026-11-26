@@ -2,7 +2,7 @@
 
 **Aluno:** Miguel Santana da Costa
 **Atividade:** Software corporativo — controle de chamados técnicos (Thindesk)
-**Versão entregue:** `1.0.0-beta.4`
+**Versão entregue:** `1.0.0-beta.5`
 
 ---
 
@@ -41,7 +41,7 @@ As contas demo não estão fixas no código: um administrador as gerencia na tel
 
 ## 3. Versionamento
 
-**Versão atual: `1.0.0-beta.4`**
+**Versão atual: `1.0.0-beta.5`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/), no formato:
 
@@ -70,6 +70,7 @@ As notas de cada versão estão em `docs/releases/` e o passo a passo de publica
 | `1.0.0-beta.2` | Hierarquia única de papéis (Thindesk e microserviço alinhados) e contas demo por perfil gerenciadas por administradores |
 | `1.0.0-beta.3` | Desafios de promoção (cavalo verde → Técnico, torre azul → Administrador) e nome de usuário com acentos |
 | `1.0.0-beta.4` | Esqueci minha senha, botão de olho nas senhas e envio de email que não finge sucesso |
+| `1.0.0-beta.5` | Revisão do site: login por email, reenvio de confirmação, sessão expirada amigável, páginas de Clientes/Técnicos/Catálogos/Horários, menu móvel e correções de cadastro e puzzle |
 
 ---
 
@@ -95,7 +96,7 @@ Os dados dos chamados vêm do microserviço `ms-chamados`.
 
 1. Acesse **https://thindesk-santana.duckdns.org/** (o HTTP redireciona para HTTPS).
 2. Entre com **`demo` / `demo1234`** → o sistema abre o **dashboard**.
-3. Clique em **Novo chamado**, preencha título e descrição e salve. O chamado aparece em **Chamados** e no dashboard com status `ABERTO`.
+3. Clique em **Novo chamado**, escolha um **tipo** (opcional), preencha título e descrição e salve. O chamado aparece em **Chamados** e no dashboard com status `ABERTO`.
 4. Para ver o **fluxo do técnico** (fila e resolução de chamados): saia e entre com **`demo-tecnico` / `tecnico123`** (só usuário e senha).
 5. No menu, abra **Fila técnica**, escolha um chamado e registre a solução. O status muda para `RESOLVIDO`, com técnico e data de resolução, e o chamado passa a ser imutável.
 
@@ -106,14 +107,15 @@ Os dados dos chamados vêm do microserviço `ms-chamados`.
 ## 6. O que o sistema faz
 
 ### Chamados técnicos
-- **Abrir** chamado (título e descrição); solicitante, data e status `ABERTO` são definidos pelo servidor.
+- **Abrir** chamado (título, tipo opcional e descrição); solicitante, data e status `ABERTO` são definidos pelo servidor.
 - **Acompanhar** os próprios chamados; técnico e admin veem os de qualquer usuário.
 - **Resolver** (somente `TECNICO`/`ADMIN`): registra solução, técnico e data; depois de `RESOLVIDO` o chamado não muda mais.
+- **Cadastros de apoio:** Clientes (técnico/admin), Técnicos, Tipos de chamado, Recursos e Horários de atendimento; catálogos e horários são gerenciados por administradores.
 
 ### Autenticação e segurança
-- **Login em 3 fatores:** senha (BCrypt) → puzzle de xadrez → link de confirmação enviado ao email do próprio usuário.
-- **Sessão** em JWT dentro de cookie `HttpOnly`.
-- **Recuperação de senha:** "Esqueci minha senha" por link de uso único enviado ao email, e botão de olho para conferir a senha digitada (login, cadastro e redefinição).
+- **Login em 3 fatores:** senha (BCrypt) → puzzle de xadrez → link de confirmação enviado ao email do próprio usuário. O identificador pode ser o **usuário ou o email**.
+- **Sessão** em JWT dentro de cookie `HttpOnly`; sessão expirada leva ao login com aviso (e as APIs respondem 401/403 em JSON).
+- **Recuperação de senha:** "Esqueci minha senha" por link de uso único enviado ao email, **Reenviar confirmação** para cadastro não ativado e botão de olho para conferir a senha digitada (login, cadastro e redefinição).
 - **Perfil inicial único e promoção por desafios:** todo cadastro começa como `USUARIO`; ícones no canto da tela levam ao **Desafio do Cavalo Verde** (3 puzzles, rating 1900–2600 → Técnico) e ao **Desafio da Torre Azul** (5 puzzles, rating 2600–3000 → Administrador), ambos em 5 minutos e com a mesma proteção anti-bot da Rainha Vermelha.
 - **Perfis em hierarquia:** `ROOT › ADMIN › TECNICO › USUARIO` (`ROOT` é um recurso opcional, desligado por padrão), aplicada igualmente no Thindesk e no microserviço. A dificuldade do puzzle aumenta conforme o perfil.
 - **Autorização em duas camadas:** regras de rota (`SecurityConfig`) e `@PreAuthorize` nos controllers.

@@ -38,6 +38,7 @@ Sistema de **controle de chamados técnicos** com **autenticação em múltiplos
 - **4 perfis:** `ROLE_USUARIO`, `ROLE_TECNICO`, `ROLE_ADMIN` e `ROLE_ROOT` (este só se obtém vencendo o desafio da rainha vermelha — ver [Perfis](#-perfis-dificuldade-do-puzzle-e-o-perfil-root)).
 - **Dificuldade do puzzle por perfil** (rating do Lichess crescente de usuário a admin).
 - **Chamados técnicos** (abrir, acompanhar, resolver) integrados ao microserviço `ms-chamados` por JWT com os papéis do usuário.
+- **Cadastros de apoio:** Clientes, Técnicos, Tipos de chamado, Recursos e Horários de atendimento; catálogos e horários são gerenciados por administradores.
 - **Dashboard** com indicadores dos chamados, fila da equipe e cruzamento dos puzzles com partidas reais do Lichess.
 - **Sessão** via **JWT em cookie HttpOnly** (`thindesk_auth`) — imune a leitura por XSS.
 - **Proteção contra bots e IAs** com bloqueio de IP por 1 hora (HTTP 418).
@@ -552,7 +553,7 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
    - **Errou:** a casa fica vermelha, a peça volta, e o contador de bolinhas avança.
    - **Tempo esgotou:** o JS chama `/api/auth/novo-puzzle` sozinho e carrega outro puzzle (contando no `Puzzle N/3`).
 
-> **Atalho de teste:** para saber o lance correto sem consultar o Mongo, abra o DevTools → **Network** → clique no request `POST /api/auth/login` → veja o JSON. Ainda assim, `lanceCorreto` **não** vai no JSON (é de propósito). Use o `mongosh` da seção 1.5 ou abra o puzzle em `http://localhost:8000/puzzle?fen=<fen>&puzzleId=<id>` para inspecionar visualmente (mas o correto continua no servidor).
+> **Atalho de teste:** para saber o lance correto sem consultar o Mongo, abra o DevTools → **Network** → clique no request `POST /api/auth/login` → veja o JSON. Ainda assim, `lanceCorreto` **não** vai no JSON (é de propósito). Consulte o documento do puzzle no MongoDB (`db.puzzles_xadrez.findOne({_id: "<puzzleId>"})`); a página `/puzzle` agora redireciona para o login.
 
 #### 2.3. Confirmar o login pelo link
 
@@ -570,7 +571,9 @@ curl -i -b cookies.txt -X POST http://localhost:8000/api/auth/logout
 | `maria`                | `/tecnico/chamados`           | 403 → página de erro |
 | `admin`                | `/admin/usuarios`             | lista de usuários    |
 | `admin`                | `/tecnico/chamados`           | fila técnica         |
-| Qualquer autenticado   | `/`, `/chamados`, `/clientes` | OK                   |
+| `admin`                | `/tipo-chamado`, `/recursos`  | catálogos com CRUD   |
+| `admin`                | `/ajustes-horarios`           | horários com CRUD    |
+| Qualquer autenticado   | `/`, `/chamados`, `/clientes`, `/tecnicos` | OK |
 
 #### 2.5. Trocar o tema
 
@@ -1078,7 +1081,7 @@ O IP vem da conexão (nunca de header do cliente) e o bloqueio também é marcad
 
 ## 🏷️ Versionamento
 
-**Versão atual: `1.0.0-beta.4`**
+**Versão atual: `1.0.0-beta.5`**
 
 O projeto segue o [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) no formato:
 
@@ -1115,6 +1118,7 @@ git push origin main --tags                        # 3) publicar commits e tags
 | `1.0.0-beta.2` | Hierarquia única de papéis alinhada ao microserviço e contas demo gerenciadas por administradores |
 | `1.0.0-beta.3` | Desafios de promoção (cavalo verde → Técnico, torre azul → Administrador) e nome de usuário com acentos |
 | `1.0.0-beta.4` | Esqueci minha senha, botão de olho nas senhas e envio de email que não finge sucesso |
+| `1.0.0-beta.5` | Revisão do site: login por email, reenvio de confirmação, sessão expirada amigável, páginas de Clientes/Técnicos/Catálogos/Horários, menu móvel e correções de cadastro e puzzle |
 
 ---
 

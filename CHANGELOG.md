@@ -4,6 +4,36 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto adota o
 [Versionamento Semântico 2.0.0](https://semver.org/lang/pt-BR/) (`MAJOR.MINOR.PATCH[-PRÉ-RELEASE]`).
 
+## [1.0.0-beta.5] - 2026-11-25
+
+### Adicionado
+- **Páginas que faltavam:** Técnicos (equipe ativa), Tipo de chamado e Recursos (catálogos gerenciados por
+  administradores) e Clientes com cadastro, edição e exclusão de verdade (antes os botões eram links mortos).
+- **Horários de atendimento:** formulário e exclusão exclusivos de administrador, validação do intervalo
+  (fim depois do início), estado vazio e mensagens de erro no próprio formulário.
+- **Tipo de chamado na abertura:** o formulário lista o catálogo e grava o tipo escolhido junto do chamado.
+- **Reenviar confirmação de cadastro:** página `/reenviar-confirmacao` (também ligada no login e no cadastro) para
+  quem perdeu o email de ativação, com o mesmo limite de 60 s entre pedidos.
+- **Login por usuário ou email** e mensagem específica para conta ainda não confirmada (somente depois de conferir
+  a senha, para não revelar contas).
+- **Sessão expirada com explicação:** páginas redirecionam para `/login?sessao=expirada`; APIs respondem 401/403 em
+  JSON em vez de devolver HTML.
+- Testes `JwtAuthFilterTest`, `PaginasTest` e `RegistroControllerTest` (27 testes no total).
+
+### Corrigido
+- A página inicial anônima e as demais páginas não devolvem mais **403 em JSON**: o visitante vai para o login.
+- **404** em `/tecnicos`, `/tipo-chamado` e `/recursos`; **500** em `/ajustes-horarios` quando o formulário era
+  aberto sem um horário novo no modelo.
+- Cookie JWT de conta removida ou desativada é apagado sem derrubar a tela de login.
+- Cadastro e redefinição de senha contam os **72 bytes do BCrypt** (acentos ocupam mais de um byte), normalizam
+  usuário/email e exigem confirmação da senha também no servidor.
+- Limite de pedidos de email não deixa passar uma tentativa a mais e o executor de envio é encerrado no shutdown.
+- Login já autenticado volta ao dashboard e `/puzzle` redireciona para `/login`.
+- Lance de **promoção** (peão chegando à última fileira) passou a ser enviado com a peça escolhida no puzzle de
+  login e no desafio da Rainha Vermelha.
+- Menu móvel mostra os rótulos (antes só os ícones), abre o submenu e anuncia corretamente o estado ao leitor de
+  tela; ícones decorativos foram escondidos da acessibilidade.
+
 ## [1.0.0-beta.4] - 2026-11-25
 
 ### Adicionado
@@ -89,6 +119,9 @@ Primeira versão funcional de ponta a ponta (aplicação web + microserviço de 
 - Segundo fator por puzzle de xadrez (puzzles públicos do Lichess) e terceiro fator por link enviado por email.
 - Temas visuais plugáveis e persistência no MongoDB Atlas.
 
+[1.0.0-beta.5]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta.5
+[1.0.0-beta.4]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta.4
+[1.0.0-beta.3]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta.2
 [1.0.0-beta]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-beta
 [1.0.0-alpha]: https://github.com/MiguelSantanaDaCosta/Sistema-de-Login-Seguro/releases/tag/v1.0.0-alpha

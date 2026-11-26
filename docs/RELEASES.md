@@ -11,6 +11,7 @@ enquanto for `alpha`, `beta` ou `rc`. As notas vêm do [`CHANGELOG.md`](../CHANG
 | `v1.0.0-beta.2` | 2026-11-25 | [`docs/releases/v1.0.0-beta.2.md`](releases/v1.0.0-beta.2.md) |
 | `v1.0.0-beta.3` | 2026-11-25 | [`docs/releases/v1.0.0-beta.3.md`](releases/v1.0.0-beta.3.md) |
 | `v1.0.0-beta.4` | 2026-11-25 | [`docs/releases/v1.0.0-beta.4.md`](releases/v1.0.0-beta.4.md) |
+| `v1.0.0-beta.5` | 2026-11-25 | [`docs/releases/v1.0.0-beta.5.md`](releases/v1.0.0-beta.5.md) |
 
 ## 1. Enviar commits e tags
 
@@ -33,7 +34,7 @@ bash scripts/publicar-releases.sh   # cria as releases que ainda não existem, t
 ## 3. Conferir
 
 - Aba **Releases** com todas as versões acima, a mais nova no topo.
-- Aba **Tags** com `v1.0.0-alpha v1.0.0-beta v1.0.0-beta.2 v1.0.0-beta.3 v1.0.0-beta.4`.
+- Aba **Tags** com `v1.0.0-alpha v1.0.0-beta v1.0.0-beta.2 v1.0.0-beta.3 v1.0.0-beta.4 v1.0.0-beta.5`.
 
 ## Tags antigas que conflitam com o versionamento
 
