@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
+import com.pfc.thindesk.root.RootProps;
 import com.pfc.thindesk.service.ThemeService;
 
 /**
@@ -19,6 +20,8 @@ public class GlobalModelAdvice {
 
     @Autowired
     private ThemeService themeService;
+    @Autowired
+    private RootProps rootProps;
 
     @ModelAttribute("temaAtivo")
     public String temaAtivo(Authentication auth) {
@@ -34,5 +37,10 @@ public class GlobalModelAdvice {
             return null;
         }
         return auth.getName();
+    }
+
+    @ModelAttribute("rootProps")
+    public RootProps rootPropsAttribute() {
+        return rootProps;
     }
 }
