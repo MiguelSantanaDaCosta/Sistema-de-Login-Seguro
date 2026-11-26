@@ -57,8 +57,12 @@ public class DataSeeder implements CommandLineRunner {
             if (adminEmail != null && !adminEmail.isBlank() && !adminEmail.endsWith("@thindesk.local")) {
                 u.setEmail(adminEmail);
             }
-            usuarioRepository.save(u);
-            System.out.println(">>> Admin padrão renomeado para '" + adminUsername + "' e senha redefinida pelo ambiente.");
+            try {
+                usuarioRepository.save(u);
+                System.out.println(">>> Admin padrão renomeado para '" + adminUsername + "' e senha redefinida pelo ambiente.");
+            } catch (RuntimeException e) {
+                System.out.println(">>> Não foi possível atualizar admin padrão: " + e.getMessage());
+            }
             return;
         }
 
@@ -69,8 +73,12 @@ public class DataSeeder implements CommandLineRunner {
         admin.setNomeCompleto("Administrador");
         admin.setAtivo(true);
         admin.setRoles(Set.of(Role.ROLE_ADMIN));
-        usuarioRepository.save(admin);
-        System.out.println(">>> Usuário admin '" + adminUsername + "' criado.");
+        try {
+            usuarioRepository.save(admin);
+            System.out.println(">>> Usuário admin '" + adminUsername + "' criado.");
+        } catch (RuntimeException e) {
+            System.out.println(">>> Não foi possível criar admin: " + e.getMessage());
+        }
     }
 
     // Se o admin ainda tem o email-placeholder (@thindesk.local) e ADMIN_EMAIL é um email real, atualiza.
@@ -101,7 +109,12 @@ public class DataSeeder implements CommandLineRunner {
             root.setNomeCompleto("Root (rainha vermelha)");
             root.setAtivo(true);
             root.setRoles(Set.of(Role.ROLE_ROOT, Role.ROLE_ADMIN, Role.ROLE_TECNICO, Role.ROLE_USUARIO));
-            usuarioRepository.save(root);
+            try {
+                usuarioRepository.save(root);
+                System.out.println(">>> Usuário root criado.");
+            } catch (RuntimeException e) {
+                System.out.println(">>> Não foi possível criar root: " + e.getMessage());
+            }
         }
     }
 }
