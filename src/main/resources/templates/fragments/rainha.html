@@ -4,13 +4,14 @@
 <body>
   <!-- Ícones de desafio, no canto da tela:
        rainha vermelha (anônimo -> desafio; ROOT -> painel), cavalo verde (promove a TÉCNICO) e
-       torre azul (promove a ADMIN). Cavalo e torre só aparecem logado, e só para quem ainda está abaixo do perfil. -->
+       torre azul (promove a ADMIN). Cavalo e torre só aparecem logado, e só para quem ainda está abaixo do perfil.
+       A rainha aparece em TODAS as páginas (mesmo não autenticado). -->
   <div th:fragment="rainha">
-    <a th:if="${@rootProps.habilitado}" sec:authorize="hasRole('ROOT')" th:href="@{/root}"
-       class="icone-desafio rainha ativa" title="Painel root">&#9819;</a>
-    <a th:if="${@rootProps.habilitado}" sec:authorize="!hasRole('ROOT')" th:href="@{/root/desafio}"
+    <!-- Rainha: em qualquer página (pública ou privada) -->
+    <a th:if="${@rootProps.habilitado}" th:href="@{/root/desafio}"
        class="icone-desafio rainha" title="Desafio da Rainha Vermelha — você ousa?">&#9819;</a>
 
+    <!-- Cavalo e Torre: só para usuários logados abaixo do seu nível -->
     <a th:if="${@rootProps.cavaloHabilitado}" sec:authorize="isAuthenticated() and !hasRole('TECNICO')"
        th:href="@{/desafio/cavalo}" class="icone-desafio cavalo"
        title="Desafio do Cavalo Verde — vire Técnico">&#9822;</a>
